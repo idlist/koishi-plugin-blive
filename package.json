@@ -1,0 +1,33 @@
+{
+  "name": "@idlist/koishi-plugin-blive",
+  "version": "0.1.0",
+  "description": "Yet another bilibili live scription.",
+  "keywords": [
+    "koishi",
+    "koishi.js"
+  ],
+  "author": "i'DLisT <me@idl.ist> (https://idl.ist)",
+  "contributors": [
+    "i'DLisT <me@idl.ist> (https://idl.ist)",
+    "Dragon-Fish <824399619@qq.com>"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/idlist/koishi-plugin-blive.git"
+  },
+  "bugs": {
+    "url": "https://github.com/idlist/koishi-plugin-blive/issues"
+  },
+  "homepage": "https://github.com/idlist/koishi-plugin-blive#readme",
+  "main": "index.js",
+  "scripts": {
+    "test": ""
+  },
+  "dependencies": {
+    "axios": "^0.21.0"
+  },
+  "devDependencies": {
+    "koishi": ">=3"
+  }
+}
