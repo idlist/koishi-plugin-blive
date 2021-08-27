@@ -28,6 +28,6 @@
     "axios": "^0.21.0"
   },
   "devDependencies": {
-    "koishi": ">=3"
+    "koishi-core": ">=3"
   }
 }

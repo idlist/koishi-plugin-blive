@@ -110,7 +110,7 @@ module.exports.apply = (ctx, config) => {
   const logger = ctx.logger('blive')
 
   /**
-   * @type {import('./index').MonitList>}
+   * @type {import('./index').MonitList}
    */
   const monits = new MonitList()
 

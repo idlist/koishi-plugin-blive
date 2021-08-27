@@ -73,10 +73,11 @@ export interface Channel extends ChannelBlive {
 
 export interface ConfigObject {
   /**
-   * Specify which bot(s) is to broadcast the live starting / ending message.
+   * Specify which bot(s) is to broadcast the live starting / ending messages.
    *
-   * If not specified, then the first bot in the bot list would be used
-   * in default.
+   * If not specified, then the `app.bots[0]` is used to broadcast the messages.
+   *
+   * It is recommended to set a value for this instead of using the default value.
    *
    * @default 0
    */
