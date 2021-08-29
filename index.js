@@ -48,6 +48,54 @@ t.set('blive', {
   'error-unknown': '发生了未知错误，请稍后再尝试。'
 })
 
+/**
+ * @param {string} module
+ * @returns {boolean}
+ */
+const hasModule = module => {
+  try {
+    require(module)
+    return true
+  } catch {
+    return false
+  }
+}
+
+/**
+ * @type {'canvas' | 'sharp' | 'none'}
+ */
+let imageProcessor = 'none'
+if (hasModule('sharp')) imageProcessor = 'sharp'
+if (hasModule('canvas')) imageProcessor = 'canvas'
+
+const iconSize = 128
+
+const getUserIcon = async (url) => {
+  let userIcon
+
+  if (imageProcessor == 'canvas') {
+    const { loadImage, createCanvas } = require('canvas')
+
+    const userIconImage = await loadImage(url)
+    const canvas = createCanvas(iconSize, iconSize)
+    const c = canvas.getContext('2d')
+    c.drawImage(userIconImage, 0, 0, iconSize, iconSize)
+
+    userIcon = 'base64://' + canvas.toBuffer('image/png').toString('base64')
+  } else if (imageProcessor == 'sharp') {
+    const sharp = require('sharp')
+
+    const userIconBuffer = await API.getImageBuffer(url)
+
+    userIcon = new sharp(userIconBuffer)
+    userIcon.resize({ width: iconSize, height: iconSize })
+    userIcon = 'base64://' + userIcon.toBuffer().toString('base64')
+  } else {
+    userIcon = url
+  }
+
+  return userIcon
+}
 
 /**
  * @type {import('./index').MonitList}
@@ -82,7 +130,6 @@ class MonitList {
       })
       if (this[id].channel.length == 0) delete this[id]
 
-      console.log(this)
       return this
     }
     return this
@@ -150,11 +197,12 @@ module.exports.apply = (ctx, config) => {
           if (user.error) continue
 
           status.live = update.live
+          const userIcon = await getUserIcon(user.iconUrl)
 
           for (const asignee of config.asignees) {
             const bot = ctx.bots[asignee]
             const availableChannel = status.channel
-              .filter(item => item.platform = bot.platform)
+              .filter(item => item.platform == bot.platform)
               .map(item => item.channelId)
 
             bot.broadcast(availableChannel,
@@ -162,13 +210,13 @@ module.exports.apply = (ctx, config) => {
                 // {0}{1}\n{2} 开播了：\n{3}\n{4}
                 ? t('blive.live-start',
                   user.coverUrl ? s('image', { url: user.coverUrl }) + '\n' : '',
-                  s('image', { url: user.iconUrl }),
+                  s('image', { url: userIcon }),
                   t('blive.user', user.username, user.uid, user.id),
                   user.title,
                   user.url)
                 // {0}\n{1} 的直播结束了。
                 : t('blive.live-end',
-                  s('image', { url: user.iconUrl }),
+                  s('image', { url: userIcon }),
                   t('blive.user', user.username, user.uid, user.id)))
           }
         } catch (err) {
@@ -363,8 +411,10 @@ module.exports.apply = (ctx, config) => {
           const user = await API.getUser(keyword)
           if (user.error) return t('blive.search-uid-not-found', keyword)
 
+          const userIcon = await getUserIcon(user.iconUrl)
+
           return t('blive.search-result-single',
-            s('image', { url: user.iconUrl }),
+            s('image', { url: userIcon }),
             user.username,
             user.uid,
             user.id ? user.id : t('blive.not-have-room'),

@@ -1,3 +1,4 @@
+const { Logger } = require('koishi')
 const axios = require('axios')
 
 const urls = {
@@ -10,6 +11,8 @@ const urls = {
 const mockHeader = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36 Edg/92.0.902.78'
 }
+
+const logger = new Logger('blive')
 
 class API {
   /**
@@ -32,7 +35,7 @@ class API {
         live: payload.live_status == 1 ? true : false
       }
     } catch (err) {
-      console.warn(err)
+      logger.warn(err)
       return { error: -418 }
     }
   }
@@ -57,7 +60,7 @@ class API {
         news: payload.room_news.content
       }
     } catch (err) {
-      console.warn(err)
+      logger.warn(err)
       return { error: -418 }
     }
   }
@@ -88,7 +91,7 @@ class API {
         live: payload.live_room.liveStatus ? true : false
       }
     } catch (err) {
-      console.warn(err)
+      logger.warn(err)
       return { error: -418 }
     }
   }
@@ -131,8 +134,23 @@ class API {
         list: result
       }
     } catch (err) {
-      console.warn(err)
+      logger.warn(err)
       return { error: -418 }
+    }
+  }
+  /**
+   * @param {string} url
+   * @returns {Promise<ArrayBuffer>}
+   */
+  static async getImageBuffer(url) {
+    try {
+      const { data } = await axios.get(url, {
+        responseType: 'arraybuffer'
+      })
+
+      return data
+    } catch (err) {
+      logger.warn(err)
     }
   }
 }
