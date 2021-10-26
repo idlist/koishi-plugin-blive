@@ -1,5 +1,8 @@
 # koishi-plugin-blive
 
+[![npm](https://img.shields.io/npm/v/@idlist/koishi-plugin-blive?style=flat-square)](https://www.npmjs.com/package/@idlist/koishi-plugin-blive)
+[![npm-download](https://img.shields.io/npm/dw/@idlist/koishi-plugin-blive?style=flat-square)](https://www.npmjs.com/package/@idlist/koishi-plugin-blive)
+
 B 站直播订阅。在主播上下播时进行提醒。
 
 > Original plugin by Dragon-Fish <824399619@qq.com>
@@ -12,7 +15,7 @@ B 站直播订阅。在主播上下播时进行提醒。
 ## 安装方法
 
 ```shell
-npm i koishi-plugin-duplicate-checker
+npm i @idlist/koishi-plugin-blive
 ```
 
 然后参照 [安装插件](https://koishi.js.org/guide/context.html#%E5%AE%89%E8%A3%85%E6%8F%92%E4%BB%B6) 继续安装。
@@ -108,7 +111,7 @@ npm i koishi-plugin-duplicate-checker
 }
 ```
 
-这个格式设计成这样是因为我懒，因为这样我就不需要手动按直播间统合一道以减少对 API 的调用了。
+这个格式设计成这样是因为我懒，因为这样我就不需要手动依直播间统合一道以减少对 API 的调用了。
 
 ## 已知问题
 
