@@ -1,5 +1,5 @@
 const { Logger } = require('koishi')
-const axios = require('axios')
+const axios = require('axios').default
 
 const urls = {
   status: 'https://api.live.bilibili.com/room/v1/Room/room_init',
@@ -35,6 +35,7 @@ class API {
         live: payload.live_status == 1 ? true : false
       }
     } catch (err) {
+      logger.warn('Something wrong happen in API - getStatus')
       logger.warn(err)
       return { error: -418 }
     }
@@ -60,6 +61,7 @@ class API {
         news: payload.room_news.content
       }
     } catch (err) {
+      logger.warn('Something wrong happen in API - getRoom')
       logger.warn(err)
       return { error: -418 }
     }
@@ -91,6 +93,7 @@ class API {
         live: payload.live_room.liveStatus ? true : false
       }
     } catch (err) {
+      logger.warn('Something wrong happen in API - getUser')
       logger.warn(err)
       return { error: -418 }
     }
@@ -134,6 +137,7 @@ class API {
         list: result
       }
     } catch (err) {
+      logger.warn('Something wrong happen in API - searchUser')
       logger.warn(err)
       return { error: -418 }
     }
@@ -150,6 +154,7 @@ class API {
 
       return data
     } catch (err) {
+      logger.warn('Something wrong happen in API - getImageBuffer')
       logger.warn(err)
     }
   }

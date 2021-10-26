@@ -102,7 +102,7 @@ const getUserIcon = async (url) => {
  */
 class MonitList {
   /**
-   * @param {{ platform: string, channelId: string }} channelObj
+   * @param {import('./index').MonitChannelItem} channelObj
    * @param {number | string} id
    * @param {string} uid
    * @param {boolean | undefined} live
@@ -120,7 +120,7 @@ class MonitList {
     return this
   }
   /**
-   * @param {{ platform: string, channelId: string }} channelObj
+   * @param {import('./index').MonitChannelItem} channelObj
    * @param {number | string} id
    */
   remove(channelObj, id) {
@@ -144,6 +144,7 @@ module.exports.name = 'blive'
  */
 module.exports.apply = (ctx, config) => {
   config = {
+    useDatabase: true,
     asignees: [0],
     maxSubsPerChannel: 10,
     pageLimit: 10,
@@ -151,7 +152,13 @@ module.exports.apply = (ctx, config) => {
     pollInterval: 60 * 1000,
     ...config
   }
-  if (!Array.isArray(config.bots)) config.asignees = [config.asignees]
+
+  if (!Array.isArray(config.asignees)) {
+    if (typeof config.asignees == 'number') {
+      config.asignees = config.asignees.toString()
+    }
+    config.asignees = [config.asignees]
+  }
 
   ctx = ctx.select('database').group()
   const logger = ctx.logger('blive')
@@ -161,20 +168,54 @@ module.exports.apply = (ctx, config) => {
    */
   const monits = new MonitList()
 
+  /**
+   * @type {import('./index').LocalList}
+   */
+  const localList = {}
+
   let pollingHandler
 
   ctx.on('connect', async () => {
-    /**
-     * @type {import('./index').Channel[]}
-     */
-    const allMonits = await ctx.database.get('channel', {}, ['id', 'blive'])
+    if (!ctx.database) {
+      config.useDatabase = false
+    }
 
-    for (const { id: verifyId, blive } of allMonits) {
-      if (!blive || Object.keys(blive).length == 0) continue
+    if (config.useDatabase) {
+      /**
+       * @type {import('./index').DatabaseChannel[]}
+       */
+      const allMonits = await ctx.database.get('channel', {}, ['id', 'blive'])
 
-      for (const [id, { uid }] of Object.entries(blive)) {
-        const [platform, channelId] = verifyId.split(':')
-        monits.add({ platform, channelId }, id, uid)
+      for (const { id: cid, blive } of allMonits) {
+        if (!blive || Object.keys(blive).length == 0) continue
+
+        for (const [id, { uid }] of Object.entries(blive)) {
+          const [platform, channelId] = cid.split(':')
+          monits.add({ platform, channelId }, id, uid)
+        }
+      }
+    } else {
+      ctx.command('blive.add').dispose()
+      ctx.command('blive.remove').dispose()
+
+      const subscriptions = config.subscriptions ?? {}
+
+      for (const [rawId, channels] of Object.entries(subscriptions)) {
+        const { id, uid, live } = await API.getStatus(parseInt(rawId))
+        await sleep(Random.int(10, 50))
+
+        const { username } = await API.getRoom(uid)
+
+        for (const cid of channels) {
+          const [ platform, channelId ] = cid.split(':')
+          monits.add({ platform, channelId }, id, uid, live)
+
+          if (!(cid in localList)) localList[cid] = {}
+          localList[cid][id] = {
+            uid: uid,
+            username: username
+          }
+        }
       }
     }
 
@@ -230,7 +271,6 @@ module.exports.apply = (ctx, config) => {
     clearInterval(pollingHandler)
   })
 
-
   ctx.command('blive', t('blive.desc'))
     .usage(t('blive.hint'))
 
@@ -241,12 +281,13 @@ module.exports.apply = (ctx, config) => {
 
       try {
         /**
-         * @type {import('./index').ChannelBlive}
+         * @type {import('./index').DatabaseChannelBlive}
          */
         const channel = await session.observeChannel(['blive'])
         if (!channel.blive) channel.blive = {}
 
-        if (Object.keys(channel.blive).length > config.maxSubsPerChannel) {
+        if (config.useDatabase &&
+          Object.keys(channel.blive).length > config.maxSubsPerChannel) {
           return t('blive.subs-maxed-out', config.maxSubsPerChannel)
         }
 
@@ -290,7 +331,7 @@ module.exports.apply = (ctx, config) => {
 
       try {
         /**
-        * @type {import('./index').ChannelBlive}
+        * @type {import('./index').DatabaseChannelBlive}
         */
         const channel = await session.observeChannel(['blive'])
         if (!channel.blive) channel.blive = {}
@@ -329,18 +370,33 @@ module.exports.apply = (ctx, config) => {
   ctx.command('blive.list [page]', t('blive.list'))
     .channelFields(['blive'])
     .action(async ({ session }, page) => {
+      const cid = `${session.platform}:${session.channelId}`
+
       try {
         /**
-         * @type {import('./index').ChannelBlive}
+         * @type {import('./index').DisplayList}
          */
-        const channel = (await session.database.get('channel', {
-          id: `${session.platform}:${session.channelId}`
-        }, ['blive']))[0]
+        let list = []
 
-        if (!channel.blive || !Object.keys(channel.blive).length) return t('blive.list-empty')
+        if (config.useDatabase) {
+          /**
+           * @type {import('./index').DatabaseChannelBlive}
+           */
+          const channel = (await session.database.get('channel', {
+            id: cid
+          }, ['blive']))[0]
 
-        let list = Object.entries(channel.blive)
-          .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
+          if (!channel.blive || !Object.keys(channel.blive).length) return t('blive.list-empty')
+
+          list = Object.entries(channel.blive)
+            .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
+        } else {
+          if (!(cid in localList)) return t('blive.list-empty')
+
+          list = Object.entries(localList[cid])
+            .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
+        }
+
         let paging = false, maxPage = 1
 
         if (list.length > config.pageLimit) {

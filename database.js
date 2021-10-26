@@ -1,7 +1,7 @@
-const { Database, Channel } = require('koishi')
+const { Tables } = require('koishi')
 
-Channel.extend(() => ({ blive: {} }))
-
-Database.extend('koishi-plugin-mysql', ({ Domain, tables }) => {
-  tables.channel.blive = new Domain.Json()
+Tables.extend('channel', {
+  fields: {
+    blive: 'json'
+  }
 })

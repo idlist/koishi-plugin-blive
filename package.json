@@ -1,6 +1,6 @@
 {
   "name": "@idlist/koishi-plugin-blive",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Yet another bilibili live scription.",
   "keywords": [
     "koishi",
@@ -21,9 +21,7 @@
   },
   "homepage": "https://github.com/idlist/koishi-plugin-blive#readme",
   "main": "index.js",
-  "scripts": {
-    "test": ""
-  },
+  "scripts": {},
   "dependencies": {
     "axios": "^0.21.0"
   },
