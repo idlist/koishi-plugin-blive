@@ -15,12 +15,10 @@ B 站直播订阅。在主播上下播时进行提醒。
 ## 安装方法
 
 ```shell
-npm i @idlist/koishi-plugin-blive
+npm i koishi-plugin-blive
 ```
 
 然后参照 [安装插件](https://koishi.js.org/guide/context.html#%E5%AE%89%E8%A3%85%E6%8F%92%E4%BB%B6) 继续安装。
-
-**注意** ：由于是 `scoped` 插件，对应的插件名为 `@idlist/blive`。
 
 ## 使用方法
 

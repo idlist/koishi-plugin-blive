@@ -1,7 +1,7 @@
 {
-  "name": "@idlist/koishi-plugin-blive",
+  "name": "koishi-plugin-blive",
   "version": "0.2.0",
-  "description": "Yet another bilibili live scription.",
+  "description": "Bilibili live scription.",
   "keywords": [
     "koishi",
     "koishi.js"
