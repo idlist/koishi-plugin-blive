@@ -73,24 +73,17 @@ npm i koishi-plugin-blive
 | 配置项 | 默认值 | 说明 |
 | - | - | - |
 | `useDatabase` | `true` | 是否使用数据库。 **\*1** |
-| `asignees` | 0 | 由哪个 bot 广播开关播消息。**\*2** |
-| `pollInterval` | 60000 | 访问 B 站 API 的时间间隔（单位毫秒）**\*3** |
+| `pollInterval` | 60000 | 访问 B 站 API 的时间间隔（单位毫秒）**\*2** |
 | `pageLimit` | 10 | 分页显示群内订阅主播时，每页的最多显示条数。 |
 | `searchPageLimit` | 10 | 在使用用户名搜索主播时的最多显示条数。 |
 | `maxSubsPerChannel` | 10 | 每个群 / 频道最大订阅数量。仅在使用数据库时有效。 |
-| `subscriptions` | `{}` | 订阅列表。仅在不使用数据库时有效。**\*4** |
+| `subscriptions` | `{}` | 订阅列表。仅在不使用数据库时有效。**\*3** |
 
 **\*1** 在没有配置数据库的情况下，即使这个选项设置为 `true` 也无法启用数据库。
 
-**\*2** 如果没有指定的话，`app.bots[0]` 将广播消息。
+**\*2** API 捅得地太频繁会被返回 429 (too many requests)。
 
-但是因为 Koishi 在多机器人下并不能保证 `app.bots[0]` 的行为一致，所以最好手动指定。
-
-接受 `number`(0, 1, 2...), `string` (`platform:botId`), `string[]`。
-
-**\*3** API 捅得地太频繁会被返回 429 (too many requests)。
-
-**\*4** 这个列表遵循以下格式：
+**\*3** 这个列表遵循以下格式：
 
 ```js
 {
