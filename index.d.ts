@@ -91,14 +91,6 @@ export interface ConfigObject {
    */
   useDatabase?: boolean
   /**
-   * 由哪个 bot 广播开关播消息。如果没有指定的话，`app.bots[0]` 将广播消息。
-   *
-   * 因为 Koishi 在多机器人下并不能保证 `app.bots[0]` 的行为一致，所以最好手动指定。
-   *
-   * @default 0
-   */
-  asignees?: number | string | string[]
-  /**
    * 访问 B 站 API 的时间间隔（单位毫秒）
    *
    * API 捅得地太频繁会被返回 429 (too many requests)。

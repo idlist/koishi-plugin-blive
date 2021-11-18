@@ -145,7 +145,6 @@ module.exports.name = 'blive'
 module.exports.apply = (ctx, config) => {
   config = {
     useDatabase: true,
-    asignees: [0],
     maxSubsPerChannel: 10,
     pageLimit: 10,
     searchPageLimit: 10,
@@ -240,26 +239,19 @@ module.exports.apply = (ctx, config) => {
           status.live = update.live
           const userIcon = await getUserIcon(user.iconUrl)
 
-          for (const asignee of config.asignees) {
-            const bot = ctx.bots[asignee]
-            const availableChannel = status.channel
-              .filter(item => item.platform == bot.platform)
-              .map(item => item.channelId)
-
-            bot.broadcast(availableChannel,
-              status.live
-                // {0}{1}\n{2} 开播了：\n{3}\n{4}
-                ? t('blive.live-start',
-                  user.coverUrl ? s('image', { url: user.coverUrl }) + '\n' : '',
-                  s('image', { url: userIcon }),
-                  t('blive.user', user.username, user.uid, user.id),
-                  user.title,
-                  user.url)
-                // {0}\n{1} 的直播结束了。
-                : t('blive.live-end',
-                  s('image', { url: userIcon }),
-                  t('blive.user', user.username, user.uid, user.id)))
-          }
+          ctx.broadcast(status.channel.map(c => `${c.platform}:${c.channelId}`),
+            status.live
+              // {0}{1}\n{2} 开播了：\n{3}\n{4}
+              ? t('blive.live-start',
+                user.coverUrl ? s('image', { url: user.coverUrl }) + '\n' : '',
+                s('image', { url: userIcon }),
+                t('blive.user', user.username, user.uid, user.id),
+                user.title,
+                user.url)
+              // {0}\n{1} 的直播结束了。
+              : t('blive.live-end',
+                s('image', { url: userIcon }),
+                t('blive.user', user.username, user.uid, user.id)))
         } catch (err) {
           logger.warn(err)
         }
