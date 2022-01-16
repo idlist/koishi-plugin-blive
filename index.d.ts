@@ -47,15 +47,10 @@ export type RoomResult = ErrorCode & RoomData
 export type UserResult = ErrorCode & UserData
 export type SearchResult = ErrorCode & SearchData
 
-export interface MonitChannelItem {
-  platform: string
-  channelId: string
-}
-
 export interface MonitItem {
   uid: string,
   live: boolean | undefined
-  channel: MonitChannelItem[]
+  channel: string[]
 }
 
 export type MonitList = Record<string, MonitItem>
@@ -73,6 +68,7 @@ export interface DatabaseChannelBlive {
 
 export interface DatabaseChannel extends DatabaseChannelBlive {
   id: string
+  platform: string
 }
 
 export type LocalList = Record<string, Blive>

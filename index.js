@@ -1,7 +1,6 @@
-const { s, t, sleep, Random } = require('koishi')
-
+const { s, t, sleep, Random, Logger } = require('koishi')
 const API = require('./api')
-require('./database')
+const extendDatabase = require('./database')
 
 t.set('blive', {
   'desc': 'bilibili 直播订阅',
@@ -48,6 +47,8 @@ t.set('blive', {
   'error-unknown': '发生了未知错误，请稍后再尝试。'
 })
 
+const logger = new Logger('blive')
+
 /**
  * @param {string} module
  * @returns {boolean}
@@ -62,11 +63,12 @@ const hasModule = module => {
 }
 
 /**
- * @type {'canvas' | 'sharp' | 'none'}
+ * @type {'canvas' | 'skia-canvas' | 'sharp' | 'none'}
  */
 let imageProcessor = 'none'
 if (hasModule('sharp')) imageProcessor = 'sharp'
 if (hasModule('canvas')) imageProcessor = 'canvas'
+if (hasModule('skia-canvas')) imageProcessor = 'skia-canvas'
 
 const iconSize = 128
 
@@ -82,6 +84,15 @@ const getUserIcon = async (url) => {
     c.drawImage(userIconImage, 0, 0, iconSize, iconSize)
 
     userIcon = 'base64://' + canvas.toBuffer('image/png').toString('base64')
+  } else if (imageProcessor == 'skia-canvas') {
+    const { Canvas, loadImage } = require('skia-canvas')
+
+    const userIconImage = await loadImage(url)
+    const canvas = new Canvas(iconSize, iconSize)
+    const c = canvas.getContext('2d')
+    c.drawImage(userIconImage, 0, 0, iconSize, iconSize)
+
+    userIcon = 'base64://' + canvas.toBufferSync('png').toString('base64')
   } else if (imageProcessor == 'sharp') {
     const sharp = require('sharp')
 
@@ -102,31 +113,31 @@ const getUserIcon = async (url) => {
  */
 class MonitList {
   /**
-   * @param {import('./index').MonitChannelItem} channelObj
+   * @param {string} cid
    * @param {number | string} id
    * @param {string} uid
    * @param {boolean | undefined} live
    */
-  add(channelObj, id, uid, live) {
+  add(cid, id, uid, live) {
     if (id in this) {
-      this[id].channel.push(channelObj)
+      this[id].channel.push(cid)
     } else {
       this[id] = {
         uid,
         live,
-        channel: [channelObj]
+        channel: [cid]
       }
     }
     return this
   }
   /**
-   * @param {import('./index').MonitChannelItem} channelObj
+   * @param {string[]} cid
    * @param {number | string} id
    */
-  remove(channelObj, id) {
+  remove(cid, id) {
     if (id in this) {
       this[id].channel = this[id].channel.filter(item => {
-        return item.platform != channelObj.platform && item.channelId != channelObj.channelId
+        return item.platform != cid.platform && item.channelId != cid.channelId
       })
       if (this[id].channel.length == 0) delete this[id]
 
@@ -136,36 +147,15 @@ class MonitList {
   }
 }
 
-module.exports.name = 'blive'
-
 /**
  * @param {import('koishi').Context} ctx
  * @param {import('./index').ConfigObject} config
  */
-module.exports.apply = (ctx, config) => {
-  config = {
-    useDatabase: true,
-    maxSubsPerChannel: 10,
-    pageLimit: 10,
-    searchPageLimit: 10,
-    pollInterval: 60 * 1000,
-    ...config
-  }
-
-  if (!Array.isArray(config.asignees)) {
-    if (typeof config.asignees == 'number') {
-      config.asignees = config.asignees.toString()
-    }
-    config.asignees = [config.asignees]
-  }
-
-  ctx = ctx.select('database').group()
-  const logger = ctx.logger('blive')
-
+const core = (ctx, config) => {
   /**
    * @type {import('./index').MonitList}
    */
-  const monits = new MonitList()
+  let monits
 
   /**
    * @type {import('./index').LocalList}
@@ -174,29 +164,25 @@ module.exports.apply = (ctx, config) => {
 
   let pollingHandler
 
-  ctx.on('connect', async () => {
-    if (!ctx.database) {
-      config.useDatabase = false
-    }
-
+  const initCore = async () => {
     if (config.useDatabase) {
+      extendDatabase(ctx)
+      monits = new MonitList()
+
       /**
        * @type {import('./index').DatabaseChannel[]}
        */
-      const allMonits = await ctx.database.get('channel', {}, ['id', 'blive'])
+      const allMonits = await ctx.database.get('channel', {}, ['platform', 'id', 'blive'])
 
-      for (const { id: cid, blive } of allMonits) {
+      for (const { platform, id: channelId, blive } of allMonits) {
         if (!blive || Object.keys(blive).length == 0) continue
 
         for (const [id, { uid }] of Object.entries(blive)) {
-          const [platform, channelId] = cid.split(':')
-          monits.add({ platform, channelId }, id, uid)
+          monits.add(`${platform}:${channelId}`, id, uid)
         }
       }
     } else {
-      ctx.command('blive.add').dispose()
-      ctx.command('blive.remove').dispose()
-
+      monits = new MonitList()
       const subscriptions = config.subscriptions ?? {}
 
       for (const [rawId, channels] of Object.entries(subscriptions)) {
@@ -206,8 +192,7 @@ module.exports.apply = (ctx, config) => {
         const { username } = await API.getRoom(uid)
 
         for (const cid of channels) {
-          const [ platform, channelId ] = cid.split(':')
-          monits.add({ platform, channelId }, id, uid, live)
+          monits.add(cid, id, uid, live)
 
           if (!(cid in localList)) localList[cid] = {}
           localList[cid][id] = {
@@ -222,6 +207,8 @@ module.exports.apply = (ctx, config) => {
       for (const [id, status] of Object.entries(monits)) {
         try {
           await sleep(Random.int(10, 50))
+
+          console.log(status)
 
           const update = await API.getStatus(id)
           if (update.error) continue
@@ -239,7 +226,7 @@ module.exports.apply = (ctx, config) => {
           status.live = update.live
           const userIcon = await getUserIcon(user.iconUrl)
 
-          ctx.broadcast(status.channel.map(c => `${c.platform}:${c.channelId}`),
+          ctx.broadcast(status.channel,
             status.live
               // {0}{1}\n{2} 开播了：\n{3}\n{4}
               ? t('blive.live-start',
@@ -257,11 +244,9 @@ module.exports.apply = (ctx, config) => {
         }
       }
     }, config.pollInterval)
-  })
+  }
 
-  ctx.on('disconnect', () => {
-    clearInterval(pollingHandler)
-  })
+  ctx.on('ready', () => { initCore() })
 
   ctx.command('blive', t('blive.desc'))
     .usage(t('blive.hint'))
@@ -304,10 +289,7 @@ module.exports.apply = (ctx, config) => {
           uid: user.uid,
           username: user.username
         }
-        monits.add({
-          platform: session.platform,
-          channelId: session.channelId
-        }, user.id, user.uid, status.live)
+        monits.add(session.cid, user.id, user.uid, status.live)
 
         return t('blive.add-success', t('blive.user', user.username, user.uid, user.id))
       } catch (err) {
@@ -331,10 +313,7 @@ module.exports.apply = (ctx, config) => {
         if (id in channel.blive) {
           const user = channel.blive[id]
           delete channel.blive[id]
-          monits.remove({
-            platform: session.platform,
-            channelId: session.channelId
-          }, id)
+          monits.remove(session.cid, id)
           return t('blive.remove-success', t('blive.user', user.username, user.uid, id))
         }
 
@@ -345,10 +324,7 @@ module.exports.apply = (ctx, config) => {
         if (status.id in channel.blive) {
           const user = channel.blive[status.id]
           delete channel.blive[status.id]
-          monits.remove({
-            platform: session.platform,
-            channelId: session.channelId
-          }, status.id)
+          monits.remove(session.cid, status.id)
           return t('blive.remove-success', t('blive.user', user.username, user.uid, status.id))
         }
 
@@ -362,7 +338,7 @@ module.exports.apply = (ctx, config) => {
   ctx.command('blive.list [page]', t('blive.list'))
     .channelFields(['blive'])
     .action(async ({ session }, page) => {
-      const cid = `${session.platform}:${session.channelId}`
+      const cid = session.cid
 
       try {
         /**
@@ -374,8 +350,8 @@ module.exports.apply = (ctx, config) => {
           /**
            * @type {import('./index').DatabaseChannelBlive}
            */
-          const channel = (await session.database.get('channel', {
-            id: cid
+          const channel = (await ctx.database.get('channel', {
+            platform: session.platform, id: session.channelId
           }, ['blive']))[0]
 
           if (!channel.blive || !Object.keys(channel.blive).length) return t('blive.list-empty')
@@ -474,4 +450,43 @@ module.exports.apply = (ctx, config) => {
         }
       }
     })
+
+  ctx.on('dispose', () => {
+    clearInterval(pollingHandler)
+  })
+}
+
+module.exports.name = 'blive'
+
+/**
+ * @param {import('koishi').Context} ctx
+ * @param {import('./index').ConfigObject} config
+ */
+module.exports.apply = (ctx, config) => {
+  config = {
+    useDatabase: true,
+    maxSubsPerChannel: 10,
+    pageLimit: 10,
+    searchPageLimit: 10,
+    pollInterval: 60 * 1000,
+    ...config
+  }
+
+  ctx = ctx.guild()
+
+  ctx.on('ready', () => {
+    ctx.plugin(core, { ...config, useDatabase: false })
+  })
+
+  ctx.on('service', async (name) => {
+    if (name == 'database' && config.useDatabase) {
+      await ctx.dispose(core)
+
+      if (ctx.database) {
+        ctx.plugin(core, config)
+      } else {
+        ctx.plugin(core, { ...config, useDatabase: false })
+      }
+    }
+  })
 }

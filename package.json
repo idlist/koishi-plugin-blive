@@ -23,9 +23,7 @@
   "main": "index.js",
   "scripts": {},
   "dependencies": {
+    "koishi": "^4.0.0",
     "axios": "^0.24.0"
-  },
-  "devDependencies": {
-    "koishi-core": ">=3"
   }
 }
