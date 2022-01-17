@@ -74,7 +74,7 @@ const iconSize = 128
 
 /**
  * @param {string} url
- * @returns {string} Resized base64 image or https link
+ * @returns {Promise<string>} Resized base64 image or https link
  */
 const getUserIcon = async (url) => {
   let userIcon
@@ -117,33 +117,37 @@ const getUserIcon = async (url) => {
  */
 class MonitList {
   /**
-   * @param {string} cid
-   * @param {number | string} id
-   * @param {string} uid
-   * @param {boolean | undefined} live
+   * @param {import('./index').MonitItemChannel} target
+   * @param {number | string} id room ID
+   * @param {string} uid user ID
+   * @param {boolean | undefined} live live status
    */
-  add(cid, id, uid, live) {
+  add(target, id, uid, live) {
     if (id in this) {
-      this[id].channel.push(cid)
+      this[id].channels.push(target)
     } else {
       this[id] = {
         uid,
         live,
-        channel: [cid]
+        channels: [target]
       }
     }
     return this
   }
+
   /**
-   * @param {string[]} cid
-   * @param {number | string} id
+   * @param {import('./index').MonitItemChannel} target
+   * @param {number | string} id room ID
    */
-  remove(cid, id) {
+  remove(target, id) {
     if (id in this) {
-      this[id].channel = this[id].channel.filter(item => {
-        return item.platform != cid.platform && item.channelId != cid.channelId
+      this[id].channels = this[id].channels.filter(item => {
+        return (
+          item.platform != target.platform &&
+          item.channelId != target.channelId
+        )
       })
-      if (this[id].channel.length == 0) delete this[id]
+      if (this[id].channels.length == 0) delete this[id]
 
       return this
     }
@@ -169,6 +173,9 @@ const core = (ctx, config) => {
   let pollingHandler
 
   const initCore = async () => {
+    // When using database, assignee is get from database
+    // whenever the bot is pushing the message.
+    // So, there is no need to save assignee in MonitList.
     if (config.useDatabase) {
       extendDatabase(ctx)
       monits = new MonitList()
@@ -176,36 +183,60 @@ const core = (ctx, config) => {
       /**
        * @type {import('./index').DatabaseChannel[]}
        */
-      const allMonits = await ctx.database.get('channel', {}, ['platform', 'id', 'blive'])
+      const allMonits = await ctx.database.get(
+        'channel',
+        {},
+        ['platform', 'id', 'blive']
+      )
 
       for (const { platform, id: channelId, blive } of allMonits) {
         if (!blive || Object.keys(blive).length == 0) continue
 
         for (const [id, { uid }] of Object.entries(blive)) {
-          monits.add(`${platform}:${channelId}`, id, uid)
+          monits.add({
+            platform: platform,
+            channelId: channelId
+          }, id, uid)
         }
       }
-    } else {
+    }
+    // When not using database, assignee is get directly from the config
+    // and should be saved in MonitList.
+    else {
       ctx.command('blive.add').dispose()
       ctx.command('blive.remove').dispose()
 
       monits = new MonitList()
+
+      /**
+       * @type {import('./index').Subscriptions}
+       */
       const subscriptions = config.subscriptions ?? {}
 
-      for (const [rawId, channels] of Object.entries(subscriptions)) {
-        const { id, uid, live } = await API.getStatus(parseInt(rawId))
-        await sleep(Random.int(10, 50))
+      for (const [aid, rooms] of Object.entries(subscriptions)) {
+        const [platform, assignee] = aid.split(':')
 
-        const { username } = await API.getRoom(uid)
+        for (const [rawId, channels] of Object.entries(rooms)) {
+          const { id, uid, live } = await API.getStatus(parseInt(rawId))
+          await sleep(50)
 
-        for (const cid of channels) {
-          monits.add(cid, id, uid, live)
+          const { username } = await API.getRoom(uid)
 
-          if (!(cid in localList)) localList[cid] = {}
-          localList[cid][id] = {
-            uid: uid,
-            username: username
+          for (const channelId of channels) {
+            monits.add({
+              platform: platform,
+              channelId: channelId,
+              assignee: assignee
+            }, id, uid, live)
+
+            const cid = `${platform}:${channelId}`
+            if (!(cid in localList)) localList[cid] = {}
+            localList[cid][id] = {
+              uid: uid,
+              username: username
+            }
           }
+          await sleep(50)
         }
       }
     }
@@ -214,7 +245,6 @@ const core = (ctx, config) => {
       for (const [id, status] of Object.entries(monits)) {
         try {
           await sleep(Random.int(10, 50))
-
           const update = await API.getStatus(id)
           if (update.error) continue
 
@@ -231,26 +261,25 @@ const core = (ctx, config) => {
           status.live = update.live
           const userIcon = await getUserIcon(user.iconUrl)
 
-          // Due to this issue, ctx.broadcast is currently not working.
-          // Use custom broadcast instead.
-          // https://github.com/koishijs/koishi/issues/462
+          // Since theis plugin is to support non-database mode,
+          // the ctx.broadcast method is not used as it's support to
+          // non-database situation is not complete.
 
           let broadcastList = []
 
           if (config.useDatabase) {
             broadcastList = await ctx.database.get('channel', {
               $or: [
-                ...status.channel.map(c => {
-                  const [platform, id] = c.split(':')
-                  return { platform: platform, id: id }
+                ...status.channels.map(channelInfo => {
+                  const { platform, channelId } = channelInfo
+                  return { platform: platform, id: channelId }
                 })
               ]
             }, ['platform', 'id', 'assignee'])
           } else {
-            broadcastList = status.channel.map(c => {
-              const [platform, id] = c.split(':')
-              const assignee = ctx.bots.find(bot => bot.platform == platform).selfId
-              return { platform: platform, id: id, assignee: assignee }
+            broadcastList = status.channels.map(channel => {
+              const { platform, channelId, assignee } = channel
+              return { platform: platform, id: channelId, assignee: assignee }
             })
           }
 
@@ -271,23 +300,6 @@ const core = (ctx, config) => {
             )
             await sleep(ctx.app.options.delay.broadcast)
           }
-
-          /*
-          ctx.broadcast(status.channel,
-            status.live
-              // {0}{1}\n{2} 开播了：\n{3}\n{4}
-              ? t('blive.live-start',
-                user.coverUrl ? s('image', { url: user.coverUrl }) + '\n' : '',
-                s('image', { url: userIcon }),
-                t('blive.user', user.username, user.uid, user.id),
-                user.title,
-                user.url)
-              // {0}\n{1} 的直播结束了。
-              : t('blive.live-end',
-                s('image', { url: userIcon }),
-                t('blive.user', user.username, user.uid, user.id))
-          )
-          */
         } catch (err) {
           logger.warn(err)
         }
@@ -298,6 +310,8 @@ const core = (ctx, config) => {
   ctx.command('blive', t('blive.desc'))
     .usage(t('blive.hint'))
 
+  // Add room to subscription list.
+  // This command is only available when using database.
   ctx.command('blive.add <id>', t('blive.add'), { authority: 2 })
     .channelFields(['blive'])
     .action(async ({ session }, id) => {
@@ -336,7 +350,11 @@ const core = (ctx, config) => {
           uid: user.uid,
           username: user.username
         }
-        monits.add(session.cid, user.id, user.uid, status.live)
+
+        monits.add({
+          platform: session.platform,
+          channelId: session.channelId
+        }, user.id, user.uid, status.live)
 
         return t('blive.add-success', t('blive.user', user.username, user.uid, user.id))
       } catch (err) {
@@ -345,6 +363,8 @@ const core = (ctx, config) => {
       }
     })
 
+  // Remove room from subscription list.
+  // This command is only available when using database.
   ctx.command('blive.remove <id>', t('blive.remove'), { authority: 2 })
     .channelFields(['blive'])
     .action(async ({ session }, id) => {
@@ -360,7 +380,7 @@ const core = (ctx, config) => {
         if (id in channel.blive) {
           const user = channel.blive[id]
           delete channel.blive[id]
-          monits.remove(session.cid, id)
+          monits.remove({ platform: session.platform, channelId: session.channelId }, id)
           return t('blive.remove-success', t('blive.user', user.username, user.uid, id))
         }
 
@@ -371,7 +391,7 @@ const core = (ctx, config) => {
         if (status.id in channel.blive) {
           const user = channel.blive[status.id]
           delete channel.blive[status.id]
-          monits.remove(session.cid, status.id)
+          monits.remove({ platform: session.platform, channelId: session.channelId }, status.id)
           return t('blive.remove-success', t('blive.user', user.username, user.uid, status.id))
         }
 
@@ -382,6 +402,7 @@ const core = (ctx, config) => {
       }
     })
 
+  // List all subscribed rooms.
   ctx.command('blive.list [page]', t('blive.list'))
     .channelFields(['blive'])
     .action(async ({ session }, page) => {
@@ -431,6 +452,8 @@ const core = (ctx, config) => {
       }
     })
 
+  // Some simple search utility.
+  // This command does not involve database operations.
   ctx.command('blive.search <keyword>', t('blive.search'))
     .option('room', '-r ' + t('blive.search-room'))
     .option('uid', '-u ' + t('blive.search-uid'))

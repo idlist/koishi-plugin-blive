@@ -47,10 +47,16 @@ export type RoomResult = ErrorCode & RoomData
 export type UserResult = ErrorCode & UserData
 export type SearchResult = ErrorCode & SearchData
 
+export interface MonitItemChannel {
+  platform: string,
+  channelId: string,
+  assignee: string
+}
+
 export interface MonitItem {
   uid: string,
   live: boolean | undefined
-  channel: string[]
+  channels: MonitItemChannel[]
 }
 
 export type MonitList = Record<string, MonitItem>
@@ -69,13 +75,14 @@ export interface DatabaseChannelBlive {
 export interface DatabaseChannel extends DatabaseChannelBlive {
   id: string
   platform: string
+  assignee: string
 }
 
 export type LocalList = Record<string, Blive>
 
 export type DisplayList = [string, BliverDetail][]
 
-export type Subscriptions = Record<string, string[]>
+export type Subscriptions = Record<Record<string, string[]>>
 
 export interface ConfigObject {
   /**
