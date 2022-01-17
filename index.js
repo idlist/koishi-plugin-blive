@@ -72,6 +72,10 @@ if (hasModule('skia-canvas')) imageProcessor = 'skia-canvas'
 
 const iconSize = 128
 
+/**
+ * @param {string} url
+ * @returns {string} Resized base64 image or https link
+ */
 const getUserIcon = async (url) => {
   let userIcon
 
@@ -182,6 +186,9 @@ const core = (ctx, config) => {
         }
       }
     } else {
+      ctx.command('blive.add').dispose()
+      ctx.command('blive.remove').dispose()
+
       monits = new MonitList()
       const subscriptions = config.subscriptions ?? {}
 
@@ -208,8 +215,6 @@ const core = (ctx, config) => {
         try {
           await sleep(Random.int(10, 50))
 
-          console.log(status)
-
           const update = await API.getStatus(id)
           if (update.error) continue
 
@@ -226,6 +231,48 @@ const core = (ctx, config) => {
           status.live = update.live
           const userIcon = await getUserIcon(user.iconUrl)
 
+          // Due to this issue, ctx.broadcast is currently not working.
+          // Use custom broadcast instead.
+          // https://github.com/koishijs/koishi/issues/462
+
+          let broadcastList = []
+
+          if (config.useDatabase) {
+            broadcastList = await ctx.database.get('channel', {
+              $or: [
+                ...status.channel.map(c => {
+                  const [platform, id] = c.split(':')
+                  return { platform: platform, id: id }
+                })
+              ]
+            }, ['platform', 'id', 'assignee'])
+          } else {
+            broadcastList = status.channel.map(c => {
+              const [platform, id] = c.split(':')
+              const assignee = ctx.bots.find(bot => bot.platform == platform).selfId
+              return { platform: platform, id: id, assignee: assignee }
+            })
+          }
+
+          for (const b of broadcastList) {
+            ctx.bots.get(`${b.platform}:${b.assignee}`).sendMessage(b.id,
+              status.live
+                // {0}{1}\n{2} 开播了：\n{3}\n{4}
+                ? t('blive.live-start',
+                  user.coverUrl ? s('image', { url: user.coverUrl }) + '\n' : '',
+                  s('image', { url: userIcon }),
+                  t('blive.user', user.username, user.uid, user.id),
+                  user.title,
+                  user.url)
+                // {0}\n{1} 的直播结束了。
+                : t('blive.live-end',
+                  s('image', { url: userIcon }),
+                  t('blive.user', user.username, user.uid, user.id))
+            )
+            await sleep(ctx.app.options.delay.broadcast)
+          }
+
+          /*
           ctx.broadcast(status.channel,
             status.live
               // {0}{1}\n{2} 开播了：\n{3}\n{4}
@@ -238,15 +285,15 @@ const core = (ctx, config) => {
               // {0}\n{1} 的直播结束了。
               : t('blive.live-end',
                 s('image', { url: userIcon }),
-                t('blive.user', user.username, user.uid, user.id)))
+                t('blive.user', user.username, user.uid, user.id))
+          )
+          */
         } catch (err) {
           logger.warn(err)
         }
       }
     }, config.pollInterval)
   }
-
-  ctx.on('ready', () => { initCore() })
 
   ctx.command('blive', t('blive.desc'))
     .usage(t('blive.hint'))
@@ -415,7 +462,8 @@ const core = (ctx, config) => {
                 user.username,
                 user.uid,
                 user.id ? user.id : t('blive.not-have-room')))
-              .join('\n'))
+              .join('\n')
+          )
         } catch (err) {
           logger.warn(err)
           return t('blive.error-unknown')
@@ -443,13 +491,16 @@ const core = (ctx, config) => {
             user.uid,
             user.id ? user.id : t('blive.not-have-room'),
             user.profile,
-            user.hasRoom ? '\n' + (user.live ? t('blive.on-live') : t('blive.not-on-live')) : '')
+            user.hasRoom ? '\n' + (user.live ? t('blive.on-live') : t('blive.not-on-live')) : ''
+          )
         } catch (err) {
           logger.warn(err)
           return t('blive.error-unknown')
         }
       }
     })
+
+  ctx.on('ready', () => { initCore() })
 
   ctx.on('dispose', () => {
     clearInterval(pollingHandler)
