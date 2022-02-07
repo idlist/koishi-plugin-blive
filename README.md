@@ -1,7 +1,7 @@
 # koishi-plugin-blive
 
-[![npm](https://img.shields.io/npm/v/@idlist/koishi-plugin-blive?style=flat-square)](https://www.npmjs.com/package/@idlist/koishi-plugin-blive)
-[![npm-download](https://img.shields.io/npm/dw/@idlist/koishi-plugin-blive?style=flat-square)](https://www.npmjs.com/package/@idlist/koishi-plugin-blive)
+[![npm](https://img.shields.io/npm/v/koishi-plugin-blive?style=flat-square)](https://www.npmjs.com/package/@idlist/koishi-plugin-blive)
+[![npm-download](https://img.shields.io/npm/dw/koishi-plugin-blive?style=flat-square)](https://www.npmjs.com/package/@idlist/koishi-plugin-blive)
 
 B 站直播订阅。在主播上下播时进行提醒。
 
