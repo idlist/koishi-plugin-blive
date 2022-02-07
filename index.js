@@ -66,9 +66,9 @@ const hasModule = module => {
  * @type {'canvas' | 'skia-canvas' | 'sharp' | 'none'}
  */
 let imageProcessor = 'none'
-if (hasModule('sharp')) imageProcessor = 'sharp'
 if (hasModule('canvas')) imageProcessor = 'canvas'
 if (hasModule('skia-canvas')) imageProcessor = 'skia-canvas'
+if (hasModule('sharp')) imageProcessor = 'sharp'
 
 const iconSize = 128
 
@@ -172,12 +172,13 @@ const core = (ctx, config) => {
 
   let pollingHandler
 
-  const initCore = async () => {
+  ctx.on('ready', async () => {
     // When using database, assignee is get from database
     // whenever the bot is pushing the message.
     // So, there is no need to save assignee in MonitList.
     if (config.useDatabase) {
       extendDatabase(ctx)
+
       monits = new MonitList()
 
       /**
@@ -203,9 +204,6 @@ const core = (ctx, config) => {
     // When not using database, assignee is get directly from the config
     // and should be saved in MonitList.
     else {
-      ctx.command('blive.add').dispose()
-      ctx.command('blive.remove').dispose()
-
       monits = new MonitList()
 
       /**
@@ -305,102 +303,14 @@ const core = (ctx, config) => {
         }
       }
     }, config.pollInterval)
-  }
+  })
+
+  ctx.on('dispose', () => {
+    clearInterval(pollingHandler)
+  })
 
   ctx.command('blive', t('blive.desc'))
     .usage(t('blive.hint'))
-
-  // Add room to subscription list.
-  // This command is only available when using database.
-  ctx.command('blive.add <id>', t('blive.add'), { authority: 2 })
-    .channelFields(['blive'])
-    .action(async ({ session }, id) => {
-      if (!id) return session.execute('help blive.add')
-
-      try {
-        /**
-         * @type {import('./index').DatabaseChannelBlive}
-         */
-        const channel = await session.observeChannel(['blive'])
-        if (!channel.blive) channel.blive = {}
-
-        if (config.useDatabase &&
-          Object.keys(channel.blive).length > config.maxSubsPerChannel) {
-          return t('blive.subs-maxed-out', config.maxSubsPerChannel)
-        }
-
-        if (id in channel.blive) {
-          const { username, uid } = channel.blive[id]
-          return t('blive.add-duplicate', t('blive.user', username, uid, id))
-        }
-
-        const status = await API.getStatus(id)
-        if (status.error == -418) return t('blive.error-network')
-        if (status.error) return t('blive.id-not-found', id)
-
-        if (status.id in channel.blive) {
-          const { username, uid } = channel.blive[status.id]
-          return t('blive.add-duplicate', t('blive.user', username, uid, status.id))
-        }
-
-        const user = await API.getUser(status.uid)
-        if (user.error) return t('blive.error-network')
-
-        channel.blive[user.id] = {
-          uid: user.uid,
-          username: user.username
-        }
-
-        monits.add({
-          platform: session.platform,
-          channelId: session.channelId
-        }, user.id, user.uid, status.live)
-
-        return t('blive.add-success', t('blive.user', user.username, user.uid, user.id))
-      } catch (err) {
-        logger.warn(err)
-        return t('blive.error-unknown')
-      }
-    })
-
-  // Remove room from subscription list.
-  // This command is only available when using database.
-  ctx.command('blive.remove <id>', t('blive.remove'), { authority: 2 })
-    .channelFields(['blive'])
-    .action(async ({ session }, id) => {
-      if (!id) return session.execute('help blive.remove')
-
-      try {
-        /**
-        * @type {import('./index').DatabaseChannelBlive}
-        */
-        const channel = await session.observeChannel(['blive'])
-        if (!channel.blive) channel.blive = {}
-
-        if (id in channel.blive) {
-          const user = channel.blive[id]
-          delete channel.blive[id]
-          monits.remove({ platform: session.platform, channelId: session.channelId }, id)
-          return t('blive.remove-success', t('blive.user', user.username, user.uid, id))
-        }
-
-        const status = await API.getStatus(id)
-        if (status.error == -418) return t('blive.error-network')
-        if (status.error) return t('blive.id-not-found')
-
-        if (status.id in channel.blive) {
-          const user = channel.blive[status.id]
-          delete channel.blive[status.id]
-          monits.remove({ platform: session.platform, channelId: session.channelId }, status.id)
-          return t('blive.remove-success', t('blive.user', user.username, user.uid, status.id))
-        }
-
-        return t('blive.id-not-subs', id)
-      } catch (err) {
-        logger.warn(err)
-        return t('blive.error-unknown')
-      }
-    })
 
   // List all subscribed rooms.
   ctx.command('blive.list [page]', t('blive.list'))
@@ -523,11 +433,99 @@ const core = (ctx, config) => {
       }
     })
 
-  ctx.on('ready', () => { initCore() })
+  // If is not using database, interrupt command registration.
+  // Following command is only available when using database.
+  if (!config.useDatabase) return
 
-  ctx.on('dispose', () => {
-    clearInterval(pollingHandler)
-  })
+  // Add room to subscription list.
+  ctx.command('blive.add <id>', t('blive.add'), { authority: 2 })
+    .channelFields(['blive'])
+    .action(async ({ session }, id) => {
+      if (!id) return session.execute('help blive.add')
+
+      try {
+        /**
+         * @type {import('./index').DatabaseChannelBlive}
+         */
+        const channel = await session.observeChannel(['blive'])
+        if (!channel.blive) channel.blive = {}
+
+        if (config.useDatabase &&
+          Object.keys(channel.blive).length > config.maxSubsPerChannel) {
+          return t('blive.subs-maxed-out', config.maxSubsPerChannel)
+        }
+
+        if (id in channel.blive) {
+          const { username, uid } = channel.blive[id]
+          return t('blive.add-duplicate', t('blive.user', username, uid, id))
+        }
+
+        const status = await API.getStatus(id)
+        if (status.error == -418) return t('blive.error-network')
+        if (status.error) return t('blive.id-not-found', id)
+
+        if (status.id in channel.blive) {
+          const { username, uid } = channel.blive[status.id]
+          return t('blive.add-duplicate', t('blive.user', username, uid, status.id))
+        }
+
+        const user = await API.getUser(status.uid)
+        if (user.error) return t('blive.error-network')
+
+        channel.blive[user.id] = {
+          uid: user.uid,
+          username: user.username
+        }
+
+        monits.add({
+          platform: session.platform,
+          channelId: session.channelId
+        }, user.id, user.uid, status.live)
+
+        return t('blive.add-success', t('blive.user', user.username, user.uid, user.id))
+      } catch (err) {
+        logger.warn(err)
+        return t('blive.error-unknown')
+      }
+    })
+
+  // Remove room from subscription list.
+  ctx.command('blive.remove <id>', t('blive.remove'), { authority: 2 })
+    .channelFields(['blive'])
+    .action(async ({ session }, id) => {
+      if (!id) return session.execute('help blive.remove')
+
+      try {
+        /**
+        * @type {import('./index').DatabaseChannelBlive}
+        */
+        const channel = await session.observeChannel(['blive'])
+        if (!channel.blive) channel.blive = {}
+
+        if (id in channel.blive) {
+          const user = channel.blive[id]
+          delete channel.blive[id]
+          monits.remove({ platform: session.platform, channelId: session.channelId }, id)
+          return t('blive.remove-success', t('blive.user', user.username, user.uid, id))
+        }
+
+        const status = await API.getStatus(id)
+        if (status.error == -418) return t('blive.error-network')
+        if (status.error) return t('blive.id-not-found')
+
+        if (status.id in channel.blive) {
+          const user = channel.blive[status.id]
+          delete channel.blive[status.id]
+          monits.remove({ platform: session.platform, channelId: session.channelId }, status.id)
+          return t('blive.remove-success', t('blive.user', user.username, user.uid, status.id))
+        }
+
+        return t('blive.id-not-subs', id)
+      } catch (err) {
+        logger.warn(err)
+        return t('blive.error-unknown')
+      }
+    })
 }
 
 module.exports.name = 'blive'
@@ -552,9 +550,9 @@ module.exports.apply = (ctx, config) => {
     ctx.plugin(core, { ...config, useDatabase: false })
   })
 
-  ctx.on('service', async (name) => {
+  ctx.on('service', (name) => {
     if (name == 'database' && config.useDatabase) {
-      await ctx.dispose(core)
+      ctx.dispose(core)
 
       if (ctx.database) {
         ctx.plugin(core, config)

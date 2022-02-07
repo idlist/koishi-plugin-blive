@@ -18,7 +18,7 @@ B 站直播订阅。在主播上下播时进行提醒。
 npm i koishi-plugin-blive
 ```
 
-然后参照 [安装插件](https://koishi.js.org/guide/context.html#%E5%AE%89%E8%A3%85%E6%8F%92%E4%BB%B6) 继续安装。
+然后在配置文件或入口文件中将插件添加至你的机器人中。
 
 ## 使用方法
 
@@ -64,7 +64,7 @@ npm i koishi-plugin-blive
 
 ## 可选功能
 
-在安装了 `sharp` 或者 `node-canvas` 的情况下，这个插件会用其缩小主播头像。优先级为 `sharp` > `node-canvas` > 什么也没有装。
+在安装了 `sharp`、`node-canvas` 或 `skia-canvas` 的情况下，这个插件会用其缩小主播头像。优先级为 `sharp` > `skia-canvas` > `node-canvas` > 什么也没有装。
 
 ## 插件配置项
 
