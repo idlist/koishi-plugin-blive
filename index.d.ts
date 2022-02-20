@@ -1,100 +1,8 @@
 import { Context } from 'koishi'
 
-interface ErrorCode {
-  error?: number
-}
+export type Subscriptions = Record<string, Record<string, string[]>>
 
-interface StatusData {
-  id: number
-  idShort: number
-  uid: number
-  live: boolean
-}
-
-interface RoomData {
-  uid: number
-  username: string
-  iconUrl: string
-  news: string
-}
-
-interface UserData {
-  uid: number
-  username: string
-  iconUrl: string
-  profile: string
-  id: number
-  url: string
-  title: string
-  coverUrl: string
-  hasRoom: boolean
-  live: boolean
-}
-
-export interface SearchDataItem {
-  uid: number
-  username: string
-  id: number
-}
-
-export interface SearchData {
-  length: number
-  list: SearchDataItem[]
-}
-
-export type StatusResult = ErrorCode & StatusData
-export type RoomResult = ErrorCode & RoomData
-export type UserResult = ErrorCode & UserData
-export type SearchResult = ErrorCode & SearchData
-
-export interface MonitorItemChannels {
-  platform: string,
-  channelId: string,
-  assignee: string
-}
-
-export interface MonitorItem {
-  uid: string,
-  live: boolean | undefined
-  channels: MonitorItemChannels[]
-}
-
-export interface MonitorAddArguments extends MonitorItemChannels {
-  id: number | string
-  uid: string
-  live?: boolean
-}
-
-export interface MonitorDeleteArguments extends MonitorItemChannels {
-  id: number | string
-}
-
-export type Monitor = Record<string, MonitorItem>
-
-interface BliverDetail {
-  uid: number
-  username: string
-}
-
-type Blive = Record<string, BliverDetail>
-
-export interface DatabaseChannelBlive {
-  blive: Blive
-}
-
-export interface DatabaseChannel extends DatabaseChannelBlive {
-  id: string
-  platform: string
-  assignee: string
-}
-
-export type LocalList = Record<string, Blive>
-
-export type DisplayList = [string, BliverDetail][]
-
-export type Subscriptions = Record<Record<string, string[]>>
-
-export interface ConfigObject {
+export interface Config {
   /**
    * 是否使用数据库。
    *
@@ -147,4 +55,4 @@ export interface ConfigObject {
   subscriptions: Subscriptions
 }
 
-export declare const apply: (ctx: Context, config: ConfigObject) => void
+export declare const apply: (ctx: Context, config: Config) => void

@@ -17,7 +17,7 @@ const logger = new Logger('blive')
 class API {
   /**
    * @param {number} id
-   * @returns {Promise<import('./index').StatusResult>}
+   * @returns {Promise<import('./api').StatusResult>}
    */
   static async getStatus(id) {
     try {
@@ -41,8 +41,8 @@ class API {
     }
   }
   /**
-   * @param {numebr} uid
-   * @returns {Promise<import('./index').RoomResult>}
+   * @param {number} uid
+   * @returns {Promise<import('./api').RoomResult>}
    */
   static async getRoom(uid) {
     try {
@@ -68,7 +68,7 @@ class API {
   }
   /**
    * @param {number} uid
-   * @returns {Promise<import('./index').UserResult>}
+   * @returns {Promise<import('./api').UserResult>}
    */
   static async getUser(uid) {
     try {
@@ -101,7 +101,7 @@ class API {
   /**
    * @param {string} keyword
    * @param {number} limit
-   * @returns {Promise<import('./index').SearchResult>}
+   * @returns {Promise<import('./api').SearchResult>}
    */
   static async searchUser(keyword, limit) {
     try {
@@ -120,7 +120,7 @@ class API {
       }
 
       /**
-       * @type {import('./index').SearchDataItem[]}
+       * @type {import('./api').SearchDataItem[]}
        */
       const result = []
       for (let i = 0; i < Math.min(limit, payload.result.length); i++) {

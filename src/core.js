@@ -2,13 +2,12 @@ const { Random, Logger, sleep, s, t } = require('koishi')
 const API = require('./api')
 const Monitor = require('./monitor')
 const getUserIcon = require('./get-user-icon')
-const extendDatabase = require('./database')
 
 const logger = new Logger('blive')
 
 /**
  * @param {import('koishi').Context} ctx
- * @param {import('../index').ConfigObject} config
+ * @param {import('../index').Config} config
  */
 module.exports = (ctx, config) => {
   /**
@@ -17,7 +16,7 @@ module.exports = (ctx, config) => {
   let monitor
 
   /**
-   * @type {import('../index').LocalList}
+   * @type {import('./core').LocalList}
    */
   const localList = {}
 
@@ -28,20 +27,20 @@ module.exports = (ctx, config) => {
     // whenever the bot is pushing the message.
     // So, there is no need to save assignee in MonitList.
     if (config.useDatabase) {
-      extendDatabase(ctx)
+      ctx.plugin(require('./database'))
 
       monitor = new Monitor()
 
       /**
-       * @type {import('../index').DatabaseChannel[]}
+       * @type {import('./core').DbChannel[]}
        */
-      const allMonits = await ctx.database.get(
+      const allMonitors = await ctx.database.get(
         'channel',
         {},
         ['platform', 'id', 'blive'],
       )
 
-      for (const { platform, id: channelId, blive } of allMonits) {
+      for (const { platform, id: channelId, blive } of allMonitors) {
         if (!blive || Object.keys(blive).length == 0) continue
 
         for (const [id, { uid }] of Object.entries(blive)) {
@@ -96,7 +95,7 @@ module.exports = (ctx, config) => {
     }
 
     pollingHandler = setInterval(async () => {
-      for (const [id, status] of Object.entries(monitor)) {
+      for (const [id, status] of Object.entries(monitor.list)) {
         try {
           await sleep(Random.int(10, 50))
           const update = await API.getStatus(id)
@@ -120,23 +119,23 @@ module.exports = (ctx, config) => {
           // the ctx.broadcast method is not used as it's support to
           // non-database situation is not complete.
 
+          /**
+           * @type {import('./core').DbChannel[]}
+           */
           let broadcastList = []
 
           if (config.useDatabase) {
             broadcastList = await ctx.database.get('channel', {
-              $or: [
-                ...status.channels.map(channelInfo => {
-                  const { platform, channelId } = channelInfo
-                  return { platform: platform, id: channelId }
-                }),
-              ],
-            }, ['platform', 'id', 'assignee'])
+              $or: status.channels.map(c => ({ platform: c.platform, id: c.channelId })),
+            }, ['platform', 'id', 'assignee', 'blive'])
           } else {
             broadcastList = status.channels.map(channel => {
               const { platform, channelId, assignee } = channel
               return { platform: platform, id: channelId, assignee: assignee }
             })
           }
+
+          let nameUpdated = false
 
           for (const b of broadcastList) {
             ctx.bots.get(`${b.platform}:${b.assignee}`).sendMessage(b.id,
@@ -155,10 +154,24 @@ module.exports = (ctx, config) => {
                   t('blive.user', user.username, user.uid, user.id),
                 ),
             )
+
+            if (config.useDatabase) {
+              if (b.blive[user.id].username != user.username) {
+                nameUpdated = true
+                b.blive[user.id].username = user.username
+              }
+            }
+
             await sleep(ctx.app.options.delay.broadcast)
           }
-        } catch (err) {
-          logger.warn(err)
+
+          console.log(broadcastList)
+
+          if (nameUpdated) {
+            ctx.database.upsert('channel', broadcastList)
+          }
+        } catch (error) {
+          logger.warn(error)
         }
       }
     }, config.pollInterval)
@@ -179,13 +192,13 @@ module.exports = (ctx, config) => {
 
       try {
         /**
-         * @type {import('../index').DisplayList}
+         * @type {import('./core').DisplayList}
          */
         let list = []
 
         if (config.useDatabase) {
           /**
-           * @type {import('../index').DatabaseChannelBlive}
+           * @type {import('./core').DbChannelBlive}
            */
           const channel = (await ctx.database.get('channel', {
             platform: session.platform, id: session.channelId,
@@ -304,7 +317,7 @@ module.exports = (ctx, config) => {
 
       try {
         /**
-         * @type {import('../index').DatabaseChannelBlive}
+         * @type {import('./core').DbChannelBlive}
          */
         const channel = await session.observeChannel(['blive'])
         if (!channel.blive) channel.blive = {}
@@ -359,7 +372,7 @@ module.exports = (ctx, config) => {
 
       try {
         /**
-        * @type {import('../index').DatabaseChannelBlive}
+        * @type {import('./core').DbChannelBlive}
         */
         const channel = await session.observeChannel(['blive'])
         if (!channel.blive) channel.blive = {}

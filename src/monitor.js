@@ -1,15 +1,19 @@
 /**
- * @type {import('../index').Monitor}
+ * @type {import('./monitor').Monitor}
  */
 class Monitor {
+  constructor() {
+    this.list = {}
+  }
+
   /**
-   * @param {import('../index').MonitorAddArguments} room
+   * @param {import('./monitor').MonitorAddArgs} room
    */
   add(room) {
     if (room.id in this) {
-      this[room.id].channels.push(room)
+      this.list[room.id].channels.push(room)
     } else {
-      this[room.id] = {
+      this.list[room.id] = {
         uid: room.uid,
         live: room.live,
         channels: [room],
@@ -19,19 +23,19 @@ class Monitor {
   }
 
   /**
-   * @param {import('../index').MonitorDeleteArguments} room
+   * @param {import('./monitor').MonitorDeleteArgs} room
    */
   remove(room) {
     const id = room.id
 
     if (id in this) {
-      this[id].channels = this[id].channels.filter(item => {
+      this.list[id].channels = this.list[id].channels.filter(item => {
         return (
           item.platform != room.platform &&
           item.channelId != room.channelId
         )
       })
-      if (this[id].channels.length == 0) delete this[id]
+      if (this.list[id].channels.length == 0) delete this.list[id]
 
       return this
     }

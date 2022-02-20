@@ -67,7 +67,7 @@ module.exports.schema = S.object({
 
 /**
  * @param {import('koishi').Context} ctx
- * @param {import('./index').ConfigObject} config
+ * @param {import('./index').Config} config
  */
 module.exports.apply = (ctx, config) => {
   config = {
