@@ -3,6 +3,6 @@
  */
 module.exports = ctx => {
   ctx.model.extend('channel', {
-    blive: 'json'
+    blive: 'json',
   })
 }

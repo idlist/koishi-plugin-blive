@@ -5,11 +5,11 @@ const urls = {
   status: 'https://api.live.bilibili.com/room/v1/Room/room_init',
   room: 'https://api.live.bilibili.com/live_user/v1/Master/info',
   user: 'https://api.bilibili.com/x/space/acc/info',
-  search: 'https://api.bilibili.com/x/web-interface/search/type'
+  search: 'https://api.bilibili.com/x/web-interface/search/type',
 }
 
 const mockHeader = {
-  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36 Edg/92.0.902.78'
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36 Edg/92.0.902.78',
 }
 
 const logger = new Logger('blive')
@@ -23,7 +23,7 @@ class API {
     try {
       const { data } = await axios.get(urls.status, {
         params: { id },
-        header: { ...mockHeader }
+        header: { ...mockHeader },
       })
       if (data.code) return { error: data.code }
 
@@ -32,7 +32,7 @@ class API {
         id: payload.room_id,
         idShort: payload.short_id,
         uid: payload.uid,
-        live: payload.live_status == 1 ? true : false
+        live: payload.live_status == 1 ? true : false,
       }
     } catch (err) {
       logger.warn('Something wrong happen in API - getStatus')
@@ -48,7 +48,7 @@ class API {
     try {
       const { data } = await axios.get(urls.room, {
         params: { uid },
-        header: { ...mockHeader }
+        header: { ...mockHeader },
       })
 
       if (data.code) return { error: data.code }
@@ -58,7 +58,7 @@ class API {
         uid: payload.info.uid,
         username: payload.info.uname,
         iconUrl: payload.info.face,
-        news: payload.room_news.content
+        news: payload.room_news.content,
       }
     } catch (err) {
       logger.warn('Something wrong happen in API - getRoom')
@@ -74,7 +74,7 @@ class API {
     try {
       const { data } = await axios.get(urls.user, {
         params: { mid: uid },
-        header: { ...mockHeader }
+        header: { ...mockHeader },
       })
       if (data.code) return { error: data.code }
 
@@ -90,7 +90,7 @@ class API {
         title: payload.live_room.title,
         coverUrl: payload.live_room.cover,
         hasRoom: payload.live_room.roomStatus ? true : false,
-        live: payload.live_room.liveStatus ? true : false
+        live: payload.live_room.liveStatus ? true : false,
       }
     } catch (err) {
       logger.warn('Something wrong happen in API - getUser')
@@ -108,15 +108,15 @@ class API {
       const { data } = await axios.get(urls.search, {
         params: {
           keyword,
-          search_type: 'bili_user'
-        }
+          search_type: 'bili_user',
+        },
       })
 
       const payload = data.data
 
       if (payload.numResults == 0) return {
         length: 0,
-        list: []
+        list: [],
       }
 
       /**
@@ -128,13 +128,13 @@ class API {
         result.push({
           uid: item.mid,
           username: item.uname,
-          id: item.room_id
+          id: item.room_id,
         })
       }
 
       return {
         length: payload.numResults,
-        list: result
+        list: result,
       }
     } catch (err) {
       logger.warn('Something wrong happen in API - searchUser')
@@ -149,7 +149,7 @@ class API {
   static async getImageBuffer(url) {
     try {
       const { data } = await axios.get(url, {
-        responseType: 'arraybuffer'
+        responseType: 'arraybuffer',
       })
 
       return data

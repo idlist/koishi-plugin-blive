@@ -43,7 +43,7 @@ t.set('blive', {
   'not-on-live': '直播间未开播。',
 
   'error-network': '发生了网络错误，请稍后再尝试。',
-  'error-unknown': '发生了未知错误，请稍后再尝试。'
+  'error-unknown': '发生了未知错误，请稍后再尝试。',
 })
 
 module.exports.name = 'blive'
@@ -59,12 +59,8 @@ module.exports.schema = S.object({
     .description('在使用用户名搜索主播时的最多显示条数。'),
   maxSubsPerChannel: S.number().default(10)
     .description('每个群 / 频道最大订阅数量。仅在使用数据库时有效。'),
-  subscriptions: S.dict(
-    S.dict(
-      S.array(S.string())
-    )
-  )
-    .description('订阅列表。仅在不使用数据库时有效。格式参照 https://github.com/idlist/koishi-plugin-blive 的 README，暂时无法通过控制台设置。')
+  subscriptions: S.any().default({})
+    .description('订阅列表。仅在不使用数据库时有效。格式参照 https://github.com/idlist/koishi-plugin-blive 的 README，暂时无法在控制台配置。'),
 })
 
 /**
@@ -78,8 +74,10 @@ module.exports.apply = (ctx, config) => {
     pageLimit: 10,
     searchPageLimit: 10,
     pollInterval: 60 * 1000,
-    ...config
+    ...config,
   }
+
+  console.log(config)
 
   ctx = ctx.guild()
 

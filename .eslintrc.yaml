@@ -16,8 +16,7 @@ rules:
   no-unused-vars: [warn]
   no-empty: [warn]
   prefer-const: [warn]
-
   semi: [warn, never]
   quotes: [warn, single]
-  comma-dangle: [warn, never]
+  comma-dangle: [warn, always-multiline]
   indent: [warn, 2, { SwitchCase: 1 }]

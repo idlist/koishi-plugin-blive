@@ -47,19 +47,29 @@ export type RoomResult = ErrorCode & RoomData
 export type UserResult = ErrorCode & UserData
 export type SearchResult = ErrorCode & SearchData
 
-export interface MonitItemChannel {
+export interface MonitorItemChannels {
   platform: string,
   channelId: string,
   assignee: string
 }
 
-export interface MonitItem {
+export interface MonitorItem {
   uid: string,
   live: boolean | undefined
-  channels: MonitItemChannel[]
+  channels: MonitorItemChannels[]
 }
 
-export type MonitList = Record<string, MonitItem>
+export interface MonitorAddArguments extends MonitorItemChannels {
+  id: number | string
+  uid: string
+  live?: boolean
+}
+
+export interface MonitorDeleteArguments extends MonitorItemChannels {
+  id: number | string
+}
+
+export type Monitor = Record<string, MonitorItem>
 
 interface BliverDetail {
   uid: number

@@ -1,127 +1,23 @@
 const { Random, Logger, sleep, s, t } = require('koishi')
 const API = require('./api')
+const Monitor = require('./monitor')
+const getUserIcon = require('./get-user-icon')
 const extendDatabase = require('./database')
 
 const logger = new Logger('blive')
 
 /**
- * @param {string} module
- * @returns {boolean}
- */
-const hasModule = module => {
-  try {
-    require(module)
-    return true
-  } catch {
-    return false
-  }
-}
-
-/**
- * @type {'canvas' | 'skia-canvas' | 'sharp' | 'none'}
- */
-let imageProcessor = 'none'
-if (hasModule('canvas')) imageProcessor = 'canvas'
-if (hasModule('skia-canvas')) imageProcessor = 'skia-canvas'
-if (hasModule('sharp')) imageProcessor = 'sharp'
-
-const iconSize = 128
-
-/**
- * @param {string} url
- * @returns {Promise<string>} Resized base64 image or https link
- */
-const getUserIcon = async (url) => {
-  let userIcon
-
-  if (imageProcessor == 'canvas') {
-    const { loadImage, createCanvas } = require('canvas')
-
-    const userIconImage = await loadImage(url)
-    const canvas = createCanvas(iconSize, iconSize)
-    const c = canvas.getContext('2d')
-    c.drawImage(userIconImage, 0, 0, iconSize, iconSize)
-
-    userIcon = 'base64://' + canvas.toBuffer('image/png').toString('base64')
-  } else if (imageProcessor == 'skia-canvas') {
-    const { Canvas, loadImage } = require('skia-canvas')
-
-    const userIconImage = await loadImage(url)
-    const canvas = new Canvas(iconSize, iconSize)
-    const c = canvas.getContext('2d')
-    c.drawImage(userIconImage, 0, 0, iconSize, iconSize)
-
-    userIcon = 'base64://' + canvas.toBufferSync('png').toString('base64')
-  } else if (imageProcessor == 'sharp') {
-    const sharp = require('sharp')
-
-    const userIconBuffer = await API.getImageBuffer(url)
-
-    userIcon = new sharp(userIconBuffer)
-    userIcon.resize({ width: iconSize, height: iconSize })
-    userIcon = 'base64://' + userIcon.toBuffer().toString('base64')
-  } else {
-    userIcon = url
-  }
-
-  return userIcon
-}
-
-/**
- * @type {import('./index').MonitList}
- */
-class MonitList {
-  /**
-   * @param {import('./index').MonitItemChannel} target
-   * @param {number | string} id room ID
-   * @param {string} uid user ID
-   * @param {boolean | undefined} live live status
-   */
-  add(target, id, uid, live) {
-    if (id in this) {
-      this[id].channels.push(target)
-    } else {
-      this[id] = {
-        uid,
-        live,
-        channels: [target]
-      }
-    }
-    return this
-  }
-
-  /**
-   * @param {import('./index').MonitItemChannel} target
-   * @param {number | string} id room ID
-   */
-  remove(target, id) {
-    if (id in this) {
-      this[id].channels = this[id].channels.filter(item => {
-        return (
-          item.platform != target.platform &&
-          item.channelId != target.channelId
-        )
-      })
-      if (this[id].channels.length == 0) delete this[id]
-
-      return this
-    }
-    return this
-  }
-}
-
-/**
  * @param {import('koishi').Context} ctx
- * @param {import('./index').ConfigObject} config
+ * @param {import('../index').ConfigObject} config
  */
 module.exports = (ctx, config) => {
   /**
-   * @type {import('./index').MonitList}
+   * @type {MonitorList}
    */
-  let monits
+  let monitor
 
   /**
-   * @type {import('./index').LocalList}
+   * @type {import('../index').LocalList}
    */
   const localList = {}
 
@@ -134,35 +30,37 @@ module.exports = (ctx, config) => {
     if (config.useDatabase) {
       extendDatabase(ctx)
 
-      monits = new MonitList()
+      monitor = new Monitor()
 
       /**
-       * @type {import('./index').DatabaseChannel[]}
+       * @type {import('../index').DatabaseChannel[]}
        */
       const allMonits = await ctx.database.get(
         'channel',
         {},
-        ['platform', 'id', 'blive']
+        ['platform', 'id', 'blive'],
       )
 
       for (const { platform, id: channelId, blive } of allMonits) {
         if (!blive || Object.keys(blive).length == 0) continue
 
         for (const [id, { uid }] of Object.entries(blive)) {
-          monits.add({
+          monitor.add({
             platform: platform,
-            channelId: channelId
-          }, id, uid)
+            channelId: channelId,
+            id: id,
+            uid: uid,
+          })
         }
       }
     }
     // When not using database, assignee is get directly from the config
     // and should be saved in MonitList.
     else {
-      monits = new MonitList()
+      monitor = new Monitor()
 
       /**
-       * @type {import('./index').Subscriptions}
+       * @type {import('../index').Subscriptions}
        */
       const subscriptions = config.subscriptions ?? {}
 
@@ -176,17 +74,20 @@ module.exports = (ctx, config) => {
           const { username } = await API.getRoom(uid)
 
           for (const channelId of channels) {
-            monits.add({
+            monitor.add({
               platform: platform,
               channelId: channelId,
-              assignee: assignee
-            }, id, uid, live)
+              assignee: assignee,
+              id: id,
+              uid: uid,
+              live: live,
+            })
 
             const cid = `${platform}:${channelId}`
             if (!(cid in localList)) localList[cid] = {}
             localList[cid][id] = {
               uid: uid,
-              username: username
+              username: username,
             }
           }
           await sleep(50)
@@ -195,7 +96,7 @@ module.exports = (ctx, config) => {
     }
 
     pollingHandler = setInterval(async () => {
-      for (const [id, status] of Object.entries(monits)) {
+      for (const [id, status] of Object.entries(monitor)) {
         try {
           await sleep(Random.int(10, 50))
           const update = await API.getStatus(id)
@@ -226,8 +127,8 @@ module.exports = (ctx, config) => {
                 ...status.channels.map(channelInfo => {
                   const { platform, channelId } = channelInfo
                   return { platform: platform, id: channelId }
-                })
-              ]
+                }),
+              ],
             }, ['platform', 'id', 'assignee'])
           } else {
             broadcastList = status.channels.map(channel => {
@@ -249,7 +150,7 @@ module.exports = (ctx, config) => {
                 // {0}\n{1} 的直播结束了。
                 : t('blive.live-end',
                   s('image', { url: userIcon }),
-                  t('blive.user', user.username, user.uid, user.id))
+                  t('blive.user', user.username, user.uid, user.id)),
             )
             await sleep(ctx.app.options.delay.broadcast)
           }
@@ -275,16 +176,16 @@ module.exports = (ctx, config) => {
 
       try {
         /**
-         * @type {import('./index').DisplayList}
+         * @type {import('../index').DisplayList}
          */
         let list = []
 
         if (config.useDatabase) {
           /**
-           * @type {import('./index').DatabaseChannelBlive}
+           * @type {import('../index').DatabaseChannelBlive}
            */
           const channel = (await ctx.database.get('channel', {
-            platform: session.platform, id: session.channelId
+            platform: session.platform, id: session.channelId,
           }, ['blive']))[0]
 
           if (!channel.blive || !Object.keys(channel.blive).length) return t('blive.list-empty')
@@ -350,7 +251,7 @@ module.exports = (ctx, config) => {
                 user.username,
                 user.uid,
                 user.id ? user.id : t('blive.not-have-room')))
-              .join('\n')
+              .join('\n'),
           )
         } catch (err) {
           logger.warn(err)
@@ -379,7 +280,7 @@ module.exports = (ctx, config) => {
             user.uid,
             user.id ? user.id : t('blive.not-have-room'),
             user.profile,
-            user.hasRoom ? '\n' + (user.live ? t('blive.on-live') : t('blive.not-on-live')) : ''
+            user.hasRoom ? '\n' + (user.live ? t('blive.on-live') : t('blive.not-on-live')) : '',
           )
         } catch (err) {
           logger.warn(err)
@@ -400,7 +301,7 @@ module.exports = (ctx, config) => {
 
       try {
         /**
-         * @type {import('./index').DatabaseChannelBlive}
+         * @type {import('../index').DatabaseChannelBlive}
          */
         const channel = await session.observeChannel(['blive'])
         if (!channel.blive) channel.blive = {}
@@ -429,13 +330,16 @@ module.exports = (ctx, config) => {
 
         channel.blive[user.id] = {
           uid: user.uid,
-          username: user.username
+          username: user.username,
         }
 
-        monits.add({
+        monitor.add({
           platform: session.platform,
-          channelId: session.channelId
-        }, user.id, user.uid, status.live)
+          channelId: session.channelId,
+          id: user.id,
+          uid: user.uid,
+          live: status.live,
+        })
 
         return t('blive.add-success', t('blive.user', user.username, user.uid, user.id))
       } catch (err) {
@@ -452,7 +356,7 @@ module.exports = (ctx, config) => {
 
       try {
         /**
-        * @type {import('./index').DatabaseChannelBlive}
+        * @type {import('../index').DatabaseChannelBlive}
         */
         const channel = await session.observeChannel(['blive'])
         if (!channel.blive) channel.blive = {}
@@ -460,7 +364,11 @@ module.exports = (ctx, config) => {
         if (id in channel.blive) {
           const user = channel.blive[id]
           delete channel.blive[id]
-          monits.remove({ platform: session.platform, channelId: session.channelId }, id)
+          monitor.remove({
+            platform: session.platform,
+            channelId: session.channelId,
+            id: id,
+          })
           return t('blive.remove-success', t('blive.user', user.username, user.uid, id))
         }
 
@@ -471,7 +379,11 @@ module.exports = (ctx, config) => {
         if (status.id in channel.blive) {
           const user = channel.blive[status.id]
           delete channel.blive[status.id]
-          monits.remove({ platform: session.platform, channelId: session.channelId }, status.id)
+          monitor.remove({
+            platform: session.platform,
+            channelId: session.channelId,
+            id: status.id,
+          })
           return t('blive.remove-success', t('blive.user', user.username, user.uid, status.id))
         }
 
