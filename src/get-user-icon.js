@@ -28,39 +28,39 @@ const iconSize = 128
  * @returns {Promise<string>} Resized base64 image or https link
  */
 const getUserIcon = async (url) => {
-  let userIcon
+  switch (imageProcessor) {
+    case 'canvas': {
+      const { loadImage, createCanvas } = require('canvas')
 
-  if (imageProcessor == 'canvas') {
-    const { loadImage, createCanvas } = require('canvas')
+      const userIconImage = await loadImage(url)
+      const canvas = createCanvas(iconSize, iconSize)
+      const c = canvas.getContext('2d')
+      c.drawImage(userIconImage, 0, 0, iconSize, iconSize)
 
-    const userIconImage = await loadImage(url)
-    const canvas = createCanvas(iconSize, iconSize)
-    const c = canvas.getContext('2d')
-    c.drawImage(userIconImage, 0, 0, iconSize, iconSize)
+      return 'base64://' + canvas.toBuffer('image/png').toString('base64')
+    }
+    case 'skia-canvas': {
+      const { loadImage, createCanvas } = require('canvas')
 
-    userIcon = 'base64://' + canvas.toBuffer('image/png').toString('base64')
-  } else if (imageProcessor == 'skia-canvas') {
-    const { Canvas, loadImage } = require('skia-canvas')
+      const userIconImage = await loadImage(url)
+      const canvas = createCanvas(iconSize, iconSize)
+      const c = canvas.getContext('2d')
+      c.drawImage(userIconImage, 0, 0, iconSize, iconSize)
 
-    const userIconImage = await loadImage(url)
-    const canvas = new Canvas(iconSize, iconSize)
-    const c = canvas.getContext('2d')
-    c.drawImage(userIconImage, 0, 0, iconSize, iconSize)
+      return 'base64://' + canvas.toBuffer('image/png').toString('base64')
+    }
+    case 'sharp': {
+      const sharp = require('sharp')
 
-    userIcon = 'base64://' + canvas.toBufferSync('png').toString('base64')
-  } else if (imageProcessor == 'sharp') {
-    const sharp = require('sharp')
+      const userIconBuffer = await API.getImageBuffer(url)
 
-    const userIconBuffer = await API.getImageBuffer(url)
-
-    userIcon = new sharp(userIconBuffer)
-    userIcon.resize({ width: iconSize, height: iconSize })
-    userIcon = 'base64://' + userIcon.toBuffer().toString('base64')
-  } else {
-    userIcon = url
+      const userIcon = sharp(userIconBuffer)
+      userIcon.resize({ width: iconSize, height: iconSize })
+      return 'base64://' + (await userIcon.toBuffer()).toString('base64')
+    }
+    default:
+      return url
   }
-
-  return userIcon
 }
 
 module.exports = getUserIcon
