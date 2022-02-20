@@ -74,6 +74,7 @@ npm i koishi-plugin-blive
 | - | - | - |
 | `useDatabase` | `true` | 是否使用数据库。 **\*1** |
 | `pollInterval` | 60000 | 访问 B 站 API 的时间间隔（单位毫秒）**\*2** |
+| `showIcon` | `true` | 在主播上下播时是否同时发送头像。使用搜索指令时不受此选项的影响。 |
 | `pageLimit` | 10 | 分页显示群内订阅主播时，每页的最多显示条数。 |
 | `searchPageLimit` | 10 | 在使用用户名搜索主播时的最多显示条数。 |
 | `maxSubsPerChannel` | 10 | 每个群 / 频道最大订阅数量。仅在使用数据库时有效。 |
@@ -114,13 +115,19 @@ npm i koishi-plugin-blive
 
 ## 更新记录
 
+### v1.1.0
+
+- 修复了使用 `sharp` 的情况下头像无法被发出的问题。
+- 新增配置项 `showIcon`，可以设置在开关播时是否同时发送头像了。
+- 支持了 `Schema`，虽然配置项 `subscriptions` 因为形状太复杂而暂时无法支持。
+
 ### v1.0.1
 
 修复了指令注册的机制，现在应该会正常识别有无数据库的情况了。
 
 ### v1.0.0
 
-简单地适配了 v4，同时本地模式下 `Subscription` 的格式有更改，需要手动指定 `assignee` （即手动指定由哪个 bot 推送消息）了。
+简单地适配了 v4，同时本地模式下 `subscriptions` 的格式有更改，需要手动指定 `assignee` （即手动指定由哪个 bot 推送消息）了。
 
 如果需要继续在 v3 使用，请使用 v0.3。
 

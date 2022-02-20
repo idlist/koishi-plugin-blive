@@ -12,7 +12,7 @@ const logger = new Logger('blive')
  */
 module.exports = (ctx, config) => {
   /**
-   * @type {MonitorList}
+   * @type {Monitor}
    */
   let monitor
 
@@ -113,7 +113,8 @@ module.exports = (ctx, config) => {
           if (user.error) continue
 
           status.live = update.live
-          const userIcon = await getUserIcon(user.iconUrl)
+          let userIcon
+          if (config.showIcon) userIcon = await getUserIcon(user.iconUrl)
 
           // Since theis plugin is to support non-database mode,
           // the ctx.broadcast method is not used as it's support to
@@ -142,15 +143,17 @@ module.exports = (ctx, config) => {
               status.live
                 // {0}{1}\n{2} 开播了：\n{3}\n{4}
                 ? t('blive.live-start',
-                  user.coverUrl ? s('image', { url: user.coverUrl }) + '\n' : '',
-                  s('image', { url: userIcon }),
+                  user.coverUrl ? s('image', { url: user.coverUrl }) + (userIcon ? '\n' : '') : '',
+                  userIcon ? s('image', { url: userIcon }) : '',
                   t('blive.user', user.username, user.uid, user.id),
                   user.title,
-                  user.url)
-                // {0}\n{1} 的直播结束了。
+                  user.url,
+                )
+                // {0}{1} 的直播结束了。
                 : t('blive.live-end',
-                  s('image', { url: userIcon }),
-                  t('blive.user', user.username, user.uid, user.id)),
+                  userIcon ? s('image', { url: userIcon }) + '\n' : '',
+                  t('blive.user', user.username, user.uid, user.id),
+                ),
             )
             await sleep(ctx.app.options.delay.broadcast)
           }

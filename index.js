@@ -23,7 +23,7 @@ t.set('blive', {
   'list-empty': '本群没有订阅直播。',
 
   'live-start': '{0}{1}\n{2} 开播了！\n标题：{3}\n{4}',
-  'live-end': '{0}\n{1} 的直播结束了。',
+  'live-end': '{0}{1} 的直播结束了。',
 
   'search': '查询直播间',
   'search-room': '指定关键字为直播间号（默认）',
@@ -53,6 +53,8 @@ module.exports.schema = S.object({
     .description('是否使用数据库。在没有配置数据库的情况下，即使打开这个选项为也无法启用数据库。'),
   pollInterval: S.number().default(60000)
     .description('访问 B 站 API 的时间间隔（单位毫秒）。API 捅得地太频繁会被返回 429 (too many requests)。'),
+  showIcon: S.boolean().default(true)
+    .description('在主播上下播时是否同时发送头像。使用搜索指令时不受此选项的影响。'),
   pageLimit: S.number().default(10)
     .description('在使用用户名搜索主播时的最多显示条数。'),
   searchPageLimit: S.number().default(10)
@@ -70,14 +72,13 @@ module.exports.schema = S.object({
 module.exports.apply = (ctx, config) => {
   config = {
     useDatabase: true,
-    maxSubsPerChannel: 10,
+    pollInterval: 60 * 1000,
+    showIcon: true,
     pageLimit: 10,
     searchPageLimit: 10,
-    pollInterval: 60 * 1000,
+    maxSubsPerChannel: 10,
     ...config,
   }
-
-  console.log(config)
 
   ctx = ctx.guild()
 

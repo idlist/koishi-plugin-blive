@@ -112,6 +112,14 @@ export interface ConfigObject {
    */
   pollInterval?: number
   /**
+   * 在主播上下播时是否同时发送头像。
+   *
+   * 使用搜索指令时不受此选项的影响。
+   *
+   * @default true
+   */
+  showIcon?: boolean
+  /**
    * 分页显示群内订阅主播时，每页的最多显示条数。
    *
    * @default 10
