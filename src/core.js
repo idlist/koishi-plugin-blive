@@ -165,8 +165,6 @@ module.exports = (ctx, config) => {
             await sleep(ctx.app.options.delay.broadcast)
           }
 
-          console.log(broadcastList)
-
           if (nameUpdated) {
             ctx.database.upsert('channel', broadcastList)
           }
