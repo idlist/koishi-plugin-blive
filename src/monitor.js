@@ -1,6 +1,10 @@
 /**
  * @type {import('./monitor').Monitor}
  */
+const { Logger } = require('koishi')
+
+const logger = new Logger('blive')
+
 class Monitor {
   constructor() {
     this.list = {}
@@ -10,7 +14,7 @@ class Monitor {
    * @param {import('./monitor').MonitorAddArgs} room
    */
   add(room) {
-    if (room.id in this) {
+    if (room.id in this.list) {
       this.list[room.id].channels.push(room)
     } else {
       this.list[room.id] = {
@@ -19,6 +23,8 @@ class Monitor {
         channels: [room],
       }
     }
+
+    logger.debug(`Monitor: add ${room.id} to ${room.platform}:${room.channelId}.`)
     return this
   }
 
@@ -28,7 +34,7 @@ class Monitor {
   remove(room) {
     const id = room.id
 
-    if (id in this) {
+    if (id in this.list) {
       this.list[id].channels = this.list[id].channels.filter(item => {
         return (
           item.platform != room.platform &&
@@ -37,8 +43,11 @@ class Monitor {
       })
       if (this.list[id].channels.length == 0) delete this.list[id]
 
+      logger.debug(`Monitor: delete ${room.id} from ${room.platform}:${room.channelId}.`)
       return this
     }
+
+    logger.debug(`Monitor: try to delete ${room.id} from ${room.platform}:${room.channelId} but cannot found record.`)
     return this
   }
 }

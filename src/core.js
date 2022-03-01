@@ -1,3 +1,4 @@
+const { inspect } = require('util')
 const { Random, Logger, sleep, s, t } = require('koishi')
 const API = require('./api')
 const Monitor = require('./monitor')
@@ -25,7 +26,7 @@ module.exports = (ctx, config) => {
   ctx.on('ready', async () => {
     // When using database, assignee is get from database
     // whenever the bot is pushing the message.
-    // So, there is no need to save assignee in MonitList.
+    // So, there is no need to save assignee in MonitorList.
     if (config.useDatabase) {
       ctx.plugin(require('./database'))
 
@@ -95,6 +96,8 @@ module.exports = (ctx, config) => {
     }
 
     pollingHandler = setInterval(async () => {
+      logger.debug('Polling list: ' + inspect(monitor.list, { depth: null, colors: true }))
+
       for (const [id, status] of Object.entries(monitor.list)) {
         try {
           await sleep(Random.int(10, 50))
