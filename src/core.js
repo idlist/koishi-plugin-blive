@@ -60,38 +60,32 @@ module.exports = (ctx, config) => {
       monitor = new Monitor()
 
       /**
-       * @type {import('../index').Subscriptions}
+       * @type {import('../index').SubscriptionItem[]}
        */
-      const subscriptions = config.subscriptions ?? {}
+      const subscriptions = config.subscriptions ?? []
 
-      for (const [aid, rooms] of Object.entries(subscriptions)) {
-        const [platform, assignee] = aid.split(':')
+      for (const { platform, assignee, room, channel } of subscriptions) {
+        const { id, uid, live } = await API.getStatus(parseInt(room))
+        await sleep(50)
 
-        for (const [rawId, channels] of Object.entries(rooms)) {
-          const { id, uid, live } = await API.getStatus(parseInt(rawId))
-          await sleep(50)
+        const { username } = await API.getRoom(uid)
 
-          const { username } = await API.getRoom(uid)
+        monitor.add({
+          platform: platform,
+          channelId: channel,
+          assignee: assignee,
+          id: id,
+          uid: uid,
+          live: live,
+        })
 
-          for (const channelId of channels) {
-            monitor.add({
-              platform: platform,
-              channelId: channelId,
-              assignee: assignee,
-              id: id,
-              uid: uid,
-              live: live,
-            })
-
-            const cid = `${platform}:${channelId}`
-            if (!(cid in localList)) localList[cid] = {}
-            localList[cid][id] = {
-              uid: uid,
-              username: username,
-            }
-          }
-          await sleep(50)
+        const cid = `${platform}:${channel}`
+        if (!(cid in localList)) localList[cid] = {}
+        localList[cid][id] = {
+          uid: uid,
+          username: username,
         }
+        await sleep(50)
       }
     }
 
@@ -163,6 +157,8 @@ module.exports = (ctx, config) => {
                 nameUpdated = true
                 b.blive[user.id].username = user.username
               }
+            } else {
+              localList[`${b.platform}:${b.id}`][user.id].username = user.username
             }
 
             await sleep(ctx.app.options.delay.broadcast)

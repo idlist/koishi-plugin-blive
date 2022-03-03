@@ -61,8 +61,17 @@ module.exports.schema = S.object({
     .description('在使用用户名搜索主播时的最多显示条数。'),
   maxSubsPerChannel: S.number().default(10)
     .description('每个群 / 频道最大订阅数量。仅在使用数据库时有效。'),
-  subscriptions: S.any().default({})
-    .description('订阅列表。仅在不使用数据库时有效。格式参照 https://github.com/idlist/koishi-plugin-blive 的 README，暂时无法在控制台配置。'),
+  subscriptions: S.array(S.object({
+    platform: S.string().required()
+      .description('用于推送的机器人的平台。QQ 则为 `onebot`。'),
+    assignee: S.string().required()
+      .description('用于推送的机器人 ID。'),
+    room: S.string().required()
+      .description('主播房间号。'),
+    channel: S.string().required()
+      .description('订阅此主播的群号。'),
+  }))
+    .description('订阅列表。仅在不使用数据库时有效。格式参照 [README](https://github.com/idlist/koishi-plugin-blive) 。'),
 })
 
 /**

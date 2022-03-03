@@ -1,6 +1,23 @@
 import { Context } from 'koishi'
 
-export type Subscriptions = Record<string, Record<string, string[]>>
+export interface SubscriptionItem {
+  /**
+   * 用于推送的机器人的平台。QQ 则为 `onebot`。
+   */
+  platform: string
+  /**
+   * 用于推送的机器人 ID。
+   */
+  assignee: string
+  /**
+   * 主播房间号。
+   */
+  room: string
+  /**
+   * 订阅此主播的群号。
+   */
+  channel: string
+}
 
 export interface Config {
   /**
@@ -50,9 +67,9 @@ export interface Config {
    *
    * 格式参照 https://github.com/idlist/koishi-plugin-blive 的 README。
    *
-   * @default {}
+   * @default []
    */
-  subscriptions: Subscriptions
+  subscriptions: SubscriptionItem[]
 }
 
 export declare const apply: (ctx: Context, config: Config) => void
