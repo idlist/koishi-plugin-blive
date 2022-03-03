@@ -29,27 +29,29 @@ interface UserData {
   live: boolean
 }
 
-export interface SearchDataItem {
-  uid: number
-  username: string
-  id: number
-}
+declare namespace API {
+  export interface SearchDataItem {
+    uid: number
+    username: string
+    id: number
+  }
 
-export interface SearchData {
-  length: number
-  list: SearchDataItem[]
-}
+  export interface SearchData {
+    length: number
+    list: SearchDataItem[]
+  }
 
-export type StatusResult = ErrorCode & StatusData
-export type RoomResult = ErrorCode & RoomData
-export type UserResult = ErrorCode & UserData
-export type SearchResult = ErrorCode & SearchData
+  export type StatusResult = ErrorCode & StatusData
+  export type RoomResult = ErrorCode & RoomData
+  export type UserResult = ErrorCode & UserData
+  export type SearchResult = ErrorCode & SearchData
+}
 
 declare class API {
-  static getStatus(id: number): Promise<StatusResult>
-  static getRoom(id: number): Promise<RoomResult>
-  static getUser(id: number): Promise<UserResult>
-  static searchUser(keyword: string, limit: number): Promise<SearchResult>
+  static getStatus(id: number): Promise<API.StatusResult>
+  static getRoom(id: number): Promise<API.RoomResult>
+  static getUser(id: number): Promise<API.UserResult>
+  static searchUser(keyword: string, limit: number): Promise<API.SearchResult>
   static getImageBuffer(url: string): Promise<ArrayBuffer>
 }
 
