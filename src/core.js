@@ -143,7 +143,7 @@ module.exports = (ctx, config) => {
                   userIcon ? s('image', { url: userIcon }) : '',
                   t('blive.user', user.username, user.uid, user.id),
                   user.title,
-                  user.url,
+                  `https://live.bilibili.com/${user.id}`,
                 )
                 // {0}{1} 的直播结束了。
                 : t('blive.live-end',
