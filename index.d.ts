@@ -17,6 +17,10 @@ export interface SubscriptionItem {
    * 订阅此主播的群号。
    */
   channel: string
+  /**
+   * 订阅此主播的服务器号。仅开黑啦和 QQ 频道（onebot）需要此项。
+   */
+  guild?: string
 }
 
 export interface Config {

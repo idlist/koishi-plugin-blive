@@ -23,6 +23,12 @@ module.exports = (ctx, config) => {
 
   let pollingHandler
 
+  ctx.on('dispose', () => {
+    ctx.on('blive/ready', () => {
+      clearInterval(pollingHandler)
+    })
+  })
+
   ctx.on('ready', async () => {
     // When using database, assignee is get from database
     // whenever the bot is pushing the message.
@@ -38,16 +44,17 @@ module.exports = (ctx, config) => {
       const allMonitors = await ctx.database.get(
         'channel',
         {},
-        ['platform', 'id', 'blive'],
+        ['platform', 'id', 'guildId', 'blive'],
       )
 
-      for (const { platform, id: channelId, blive } of allMonitors) {
+      for (const { platform, id: channelId, blive, guildId } of allMonitors) {
         if (!blive || Object.keys(blive).length == 0) continue
 
         for (const [id, { uid }] of Object.entries(blive)) {
           monitor.add({
             platform: platform,
             channelId: channelId,
+            guildId: guildId,
             id: id,
             uid: uid,
           })
@@ -64,7 +71,7 @@ module.exports = (ctx, config) => {
        */
       const subscriptions = config.subscriptions ?? []
 
-      for (const { platform, assignee, room, channel } of subscriptions) {
+      for (const { platform, assignee, room, channel, guild } of subscriptions) {
         const { id, uid, live } = await API.getStatus(parseInt(room))
         await sleep(50)
 
@@ -73,6 +80,7 @@ module.exports = (ctx, config) => {
         monitor.add({
           platform: platform,
           channelId: channel,
+          guildId: guild,
           assignee: assignee,
           id: id,
           uid: uid,
@@ -124,18 +132,24 @@ module.exports = (ctx, config) => {
           if (config.useDatabase) {
             broadcastList = await ctx.database.get('channel', {
               $or: status.channels.map(c => ({ platform: c.platform, id: c.channelId })),
-            }, ['platform', 'id', 'assignee', 'blive'])
+            }, ['platform', 'id', 'guildId', 'assignee', 'blive'])
           } else {
             broadcastList = status.channels.map(channel => {
-              const { platform, channelId, assignee } = channel
-              return { platform: platform, id: channelId, assignee: assignee }
+              const { platform, channelId, guildId, assignee } = channel
+              return {
+                platform: platform,
+                id: channelId,
+                guildId: guildId,
+                assignee: assignee,
+              }
             })
           }
 
           let nameUpdated = false
 
           for (const b of broadcastList) {
-            ctx.bots.get(`${b.platform}:${b.assignee}`).sendMessage(b.id,
+            ctx.bots.get(`${b.platform}:${b.assignee}`).sendMessage(
+              b.id,
               status.live
                 // {0}{1}\n{2} 开播了：\n{3}\n{4}
                 ? t('blive.live-start',
@@ -150,6 +164,7 @@ module.exports = (ctx, config) => {
                   userIcon ? s('image', { url: userIcon }) + '\n' : '',
                   t('blive.user', user.username, user.uid, user.id),
                 ),
+              b.guildId,
             )
 
             if (config.useDatabase) {
@@ -172,10 +187,8 @@ module.exports = (ctx, config) => {
         }
       }
     }, config.pollInterval)
-  })
 
-  ctx.on('dispose', () => {
-    clearInterval(pollingHandler)
+    ctx.emit('blive/ready')
   })
 
   ctx.command('blive', t('blive.desc'))
@@ -349,6 +362,7 @@ module.exports = (ctx, config) => {
         monitor.add({
           platform: session.platform,
           channelId: session.channelId,
+          guildId: session.guildId,
           id: user.id,
           uid: user.uid,
           live: status.live,
@@ -380,6 +394,7 @@ module.exports = (ctx, config) => {
           monitor.remove({
             platform: session.platform,
             channelId: session.channelId,
+            guildId: session.guildId,
             id: id,
           })
           return t('blive.remove-success', t('blive.user', user.username, user.uid, id))

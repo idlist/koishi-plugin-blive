@@ -69,7 +69,9 @@ module.exports.schema = S.object({
     room: S.string().required()
       .description('主播房间号。'),
     channel: S.string().required()
-      .description('订阅此主播的群号。'),
+      .description('订阅此主播的群号 / 频道号。'),
+    guild: S.string()
+      .description('订阅此主播的服务器号。仅开黑啦和 QQ 频道（onebot）需要此项。'),
   }))
     .description('订阅列表。仅在不使用数据库时有效。格式参照 [README](https://github.com/idlist/koishi-plugin-blive) 。'),
 })

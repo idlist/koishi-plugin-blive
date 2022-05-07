@@ -1,7 +1,8 @@
 declare namespace Monitor {
   export interface MonitorItemChannels {
-    platform: string,
-    channelId: string,
+    platform: string
+    channelId: string
+    guildId?: string
     assignee: string
   }
 
@@ -10,6 +11,8 @@ declare namespace Monitor {
     live: boolean | undefined
     channels: MonitorItemChannels[]
   }
+
+  export type MonitorList = Record<string, Monitor.MonitorItem>
 
   export interface MonitorAddArgs extends MonitorItemChannels {
     id: number | string
@@ -24,9 +27,9 @@ declare namespace Monitor {
 
 declare class Monitor {
   constructor()
-  list: Record<string, Monitor.MonitorItem>
+  list: Monitor.MonitorList
   add(args: Monitor.MonitorAddArgs): this
-  delete(args: Monitor.MonitorDeleteArgs): this
+  remove(args: Monitor.MonitorDeleteArgs): this
 }
 
 export = Monitor

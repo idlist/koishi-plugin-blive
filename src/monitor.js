@@ -7,6 +7,9 @@ const logger = new Logger('blive')
 
 class Monitor {
   constructor() {
+    /**
+     * @type {import('./monitor').MonitorList}
+     */
     this.list = {}
   }
 
@@ -38,16 +41,20 @@ class Monitor {
       this.list[id].channels = this.list[id].channels.filter(item => {
         return (
           item.platform != room.platform &&
-          item.channelId != room.channelId
+          item.channelId != room.channelId &&
+          (
+            item.guildId &&
+            item.guildId != room.guildId
+          )
         )
       })
       if (this.list[id].channels.length == 0) delete this.list[id]
 
-      logger.debug(`Monitor: delete ${room.id} from ${room.platform}:${room.channelId}.`)
+      logger.debug(`Monitor: remove ${room.id} from ${room.platform}:${room.channelId}.`)
       return this
     }
 
-    logger.debug(`Monitor: try to delete ${room.id} from ${room.platform}:${room.channelId} but cannot found record.`)
+    logger.debug(`Monitor: try to remove ${room.id} from ${room.platform}:${room.channelId} but cannot found record.`)
     return this
   }
 }

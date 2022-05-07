@@ -7,6 +7,7 @@ export type Blive = Record<string, BliverDetail>
 
 export interface DbChannel extends DbChannelBlive {
   id: string
+  guildId?: string
   platform: string
   assignee: string
   blive: Blive
