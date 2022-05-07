@@ -92,6 +92,7 @@ interface SubscriptionItem {
   assignee: string // 用于推送的机器人 ID。
   room: string     // 主播房间号。
   channel: string  // 订阅此主播的群号。
+  guild?: string   // 订阅此主播的服务器号。仅 QQ 频道或开黑啦需要此项。
 }
 ```
 
@@ -103,14 +104,19 @@ interface SubscriptionItem {
   assignee: '114514',
   room: '364364',
   channel: '12345678',
+  // 因为不是 QQ 频道所以不填写 guild。
 }
 ```
 
 ## 已知问题
 
-因为并没有多 bot 测试环境，所以并不清楚对于多 bot 的支持如何，可能会有问题。
+因为并没有多 bot 和对 QQ 频道的测试环境，所以对这些情况的支持可能会有问题。
 
 ## 更新记录
+
+### v1.3.0
+
+尝试增加对 QQ 频道的支持。
 
 ### v1.2.0
 
