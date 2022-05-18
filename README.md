@@ -26,7 +26,7 @@ npm i koishi-plugin-blive
 
 这个插件有 **使用数据库** 与 **不使用数据库** 两种模式，默认使用数据库。
 
-#### `blive.add <id>`
+### blive.add <id>
 
 `id`: 房间号
 
@@ -34,7 +34,7 @@ npm i koishi-plugin-blive
 
 新增订阅。仅在使用数据库时可用。
 
-#### `blive.remove <id>`
+### blive.remove <id>
 
 `id`: 房间号
 
@@ -42,19 +42,19 @@ npm i koishi-plugin-blive
 
 移除订阅。仅在使用数据库时可用。
 
-#### `blive.list [page]`
+### blive.list [page]
 
 `page`: 列表页码
 
 显示订阅列表。
 
-#### `blive.search <keyword>`
+### blive.search <keyword>
 
 `keyword`: 关键字
 
 搜索主播 / 直播间。
 
-##### 选项
+#### 选项
 
 `--room`, `-r`: 使用房间号进行搜索（默认行为）。此时 `keyword` 为房间号。
 
@@ -114,9 +114,12 @@ interface SubscriptionItem {
 
 ## 更新记录
 
+<details>
+<summary><h3>v1 （用于 Koishi v4）</h3></summary>
+
 ### v1.3.0
 
-尝试增加对 QQ 频道的支持。
+- 尝试增加对 QQ 频道的支持。
 
 ### v1.2.0
 
@@ -151,6 +154,13 @@ interface SubscriptionItem {
 
 如果需要继续在 v3 使用，请使用 v0.3。
 
+</details>
+
+<details>
+<summary><h3>v0 （用于 Koishi v3）</h3></summary>
+
 ### v0.3.0
 
 - 增加了在安装一些图像处理的依赖的情况下，可以用它们对 B 站的用户头像进行缩放的功能，以减少刷屏程度。
+
+</details>
