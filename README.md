@@ -5,12 +5,17 @@
 
 B 站直播订阅。在主播上下播时进行提醒。
 
+<details>
+<summary>开发者信息</summary>
+
 > Original plugin by Dragon-Fish <824399619@qq.com>
 >
 > Original repository:
 > https://github.com/koishijs/koishi-plugin-blive
 >
 > Refactored by i'DLisT <me@idl.ist> (https://idl.ist/)
+
+</details>
 
 ## 安装方法
 
@@ -26,7 +31,7 @@ npm i koishi-plugin-blive
 
 这个插件有 **使用数据库** 与 **不使用数据库** 两种模式，默认使用数据库。
 
-### blive.add <id>
+### blive.add \<id\>
 
 `id`: 房间号
 
@@ -34,7 +39,7 @@ npm i koishi-plugin-blive
 
 新增订阅。仅在使用数据库时可用。
 
-### blive.remove <id>
+### blive.remove \<id\>
 
 `id`: 房间号
 
@@ -42,13 +47,13 @@ npm i koishi-plugin-blive
 
 移除订阅。仅在使用数据库时可用。
 
-### blive.list [page]
+### blive.list \[page\]
 
 `page`: 列表页码
 
 显示订阅列表。
 
-### blive.search <keyword>
+### blive.search \<keyword\>
 
 `keyword`: 关键字
 
@@ -115,7 +120,7 @@ interface SubscriptionItem {
 ## 更新记录
 
 <details>
-<summary><h3>v1 （用于 Koishi v4）</h3></summary>
+<summary><b>v1.0</b> （用于 Koishi v4）</summary>
 
 ### v1.3.0
 
@@ -157,7 +162,7 @@ interface SubscriptionItem {
 </details>
 
 <details>
-<summary><h3>v0 （用于 Koishi v3）</h3></summary>
+<summary><b>v0.1 ~ v0.3</b> （用于 Koishi v3）</summary>
 
 ### v0.3.0
 
