@@ -13,9 +13,7 @@ const hasModule = module => {
   }
 }
 
-/**
- * @type {'canvas' | 'skia-canvas' | 'sharp' | 'none'}
- */
+/** @type {'canvas' | 'skia-canvas' | 'sharp' | 'none'} */
 let imageProcessor = 'none'
 if (hasModule('canvas')) imageProcessor = 'canvas'
 if (hasModule('skia-canvas')) imageProcessor = 'skia-canvas'

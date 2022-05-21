@@ -11,14 +11,10 @@ const logger = new Logger('blive')
  * @param {import('../index').Config} config
  */
 module.exports = (ctx, config) => {
-  /**
-   * @type {Monitor}
-   */
+  /** @type {Monitor} */
   let monitor
 
-  /**
-   * @type {import('./core').LocalList}
-   */
+  /** @type {import('./core').LocalList} */
   const localList = {}
 
   let pollingHandler
@@ -38,9 +34,7 @@ module.exports = (ctx, config) => {
 
       monitor = new Monitor()
 
-      /**
-       * @type {import('./core').DbChannel[]}
-       */
+      /** @type {import('./core').DbChannel[]} */
       const allMonitors = await ctx.database.get(
         'channel',
         {},
@@ -66,9 +60,7 @@ module.exports = (ctx, config) => {
     else {
       monitor = new Monitor()
 
-      /**
-       * @type {import('../index').SubscriptionItem[]}
-       */
+      /** @type {import('../index').SubscriptionItem[]} */
       const subscriptions = config.subscriptions ?? []
 
       for (const { platform, assignee, room, channel, guild } of subscriptions) {
@@ -124,9 +116,7 @@ module.exports = (ctx, config) => {
           // the ctx.broadcast method is not used as it's support to
           // non-database situation is not complete.
 
-          /**
-           * @type {import('./core').DbChannel[]}
-           */
+          /** @type {import('./core').DbChannel[]} */
           let broadcastList = []
 
           if (config.useDatabase) {
@@ -201,15 +191,11 @@ module.exports = (ctx, config) => {
       const cid = session.cid
 
       try {
-        /**
-         * @type {import('./core').DisplayList}
-         */
+        /** @type {import('./core').DisplayList} */
         let list = []
 
         if (config.useDatabase) {
-          /**
-           * @type {import('./core').DbChannelBlive}
-           */
+          /** @type {import('./core').DbChannelBlive} */
           const channel = (await ctx.database.get('channel', {
             platform: session.platform, id: session.channelId,
           }, ['blive']))[0]
@@ -326,9 +312,7 @@ module.exports = (ctx, config) => {
       if (!id) return session.execute('help blive.add')
 
       try {
-        /**
-         * @type {import('./core').DbChannelBlive}
-         */
+        /** @type {import('./core').DbChannelBlive} */
         const channel = await session.observeChannel(['blive'])
         if (!channel.blive) channel.blive = {}
 
@@ -382,9 +366,7 @@ module.exports = (ctx, config) => {
       if (!id) return session.execute('help blive.remove')
 
       try {
-        /**
-        * @type {import('./core').DbChannelBlive}
-        */
+        /** @type {import('./core').DbChannelBlive} */
         const channel = await session.observeChannel(['blive'])
         if (!channel.blive) channel.blive = {}
 

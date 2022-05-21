@@ -20,6 +20,11 @@
     "url": "https://github.com/idlist/koishi-plugin-blive/issues"
   },
   "homepage": "https://github.com/idlist/koishi-plugin-blive#readme",
+  "files": [
+    "src",
+    "index.d.ts",
+    "index.js"
+  ],
   "main": "index.js",
   "scripts": {},
   "dependencies": {

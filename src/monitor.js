@@ -1,15 +1,10 @@
-/**
- * @type {import('./monitor').Monitor}
- */
 const { Logger } = require('koishi')
 
 const logger = new Logger('blive')
 
 class Monitor {
   constructor() {
-    /**
-     * @type {import('./monitor').MonitorList}
-     */
+    /** @type {import('./monitor').MonitorList} */
     this.list = {}
   }
 

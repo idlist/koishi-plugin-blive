@@ -119,9 +119,7 @@ class API {
         list: [],
       }
 
-      /**
-       * @type {import('./api').SearchDataItem[]}
-       */
+      /** @type {import('./api').SearchDataItem[]} */
       const result = []
       for (let i = 0; i < Math.min(limit, payload.result.length); i++) {
         const item = payload.result[i]
