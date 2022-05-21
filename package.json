@@ -1,6 +1,6 @@
 {
   "name": "koishi-plugin-blive",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "Bilibili live subscription for Koishi.js.",
   "keywords": [
     "koishi",
@@ -29,6 +29,6 @@
   "scripts": {},
   "dependencies": {
     "koishi": "^4.0.0",
-    "axios": "^0.24.0"
+    "axios": "^0.27.0"
   }
 }
