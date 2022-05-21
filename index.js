@@ -93,19 +93,13 @@ module.exports.apply = (ctx, config) => {
 
   ctx = ctx.guild()
 
-  ctx.on('ready', () => {
-    ctx.plugin(core, { ...config, useDatabase: false })
-  })
+  if (ctx.database) ctx.plugin(core, config)
+  else ctx.plugin(core, { ...config, useDatabase: false })
 
   ctx.on('service', (name) => {
-    if (name == 'database' && config.useDatabase) {
+    if (name == 'database' && ctx.database && config.useDatabase) {
       ctx.dispose(core)
-
-      if (ctx.database) {
-        ctx.plugin(core, config)
-      } else {
-        ctx.plugin(core, { ...config, useDatabase: false })
-      }
+      ctx.plugin(core, config)
     }
   })
 }

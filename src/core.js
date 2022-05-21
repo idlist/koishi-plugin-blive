@@ -112,8 +112,8 @@ module.exports = (ctx, config) => {
           let userIcon
           if (config.showIcon) userIcon = await getUserIcon(user.iconUrl)
 
-          // Since theis plugin is to support non-database mode,
-          // the ctx.broadcast method is not used as it's support to
+          // Since this plugin is to support non-database mode,
+          // the ctx.broadcast method cannot be used here as it's support to
           // non-database situation is not complete.
 
           /** @type {import('./core').DbChannel[]} */
@@ -301,7 +301,7 @@ module.exports = (ctx, config) => {
       }
     })
 
-  // If is not using database, interrupt command registration.
+  // If is not using database, terminate command registration.
   // Following command is only available when using database.
   if (!config.useDatabase) return
 
