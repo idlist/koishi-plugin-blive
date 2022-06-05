@@ -27,8 +27,7 @@
   ],
   "main": "index.js",
   "scripts": {},
-  "dependencies": {
-    "koishi": "^4.0.0",
-    "axios": "^0.27.0"
+  "peerDependencies": {
+    "koishi": "^4.0.0"
   }
 }

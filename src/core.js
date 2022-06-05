@@ -1,16 +1,17 @@
 const { inspect } = require('util')
 const { Random, Logger, sleep, s, t } = require('koishi')
-const API = require('./api')
+const APIGenerator = require('./api')
 const Monitor = require('./monitor')
 const getUserIcon = require('./get-user-icon')
-
-const logger = new Logger('blive')
 
 /**
  * @param {import('koishi').Context} ctx
  * @param {import('../index').Config} config
  */
 module.exports = (ctx, config) => {
+  const logger = new Logger('blive')
+  const API = new APIGenerator(ctx)
+
   /** @type {Monitor} */
   let monitor
 

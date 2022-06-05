@@ -1,5 +1,4 @@
 const { Logger } = require('koishi')
-const axios = require('axios').default
 
 const urls = {
   status: 'https://api.live.bilibili.com/room/v1/Room/room_init',
@@ -14,14 +13,21 @@ const mockHeader = {
 
 const logger = new Logger('blive')
 
-class API {
+class APIGenerator {
+  /**
+   * @param {import('koishi').Context} ctx
+   */
+  constructor(ctx) {
+    /** @type {import('koishi').Quester} */
+    this.http = ctx.http
+  }
   /**
    * @param {number} id
    * @returns {Promise<import('./api').StatusResult>}
    */
-  static async getStatus(id) {
+  async getStatus(id) {
     try {
-      const { data } = await axios.get(urls.status, {
+      const data = await this.http.get(urls.status, {
         params: { id },
         header: { ...mockHeader },
       })
@@ -44,9 +50,9 @@ class API {
    * @param {number} uid
    * @returns {Promise<import('./api').RoomResult>}
    */
-  static async getRoom(uid) {
+  async getRoom(uid) {
     try {
-      const { data } = await axios.get(urls.room, {
+      const data = await this.http.get(urls.room, {
         params: { uid },
         header: { ...mockHeader },
       })
@@ -70,9 +76,9 @@ class API {
    * @param {number} uid
    * @returns {Promise<import('./api').UserResult>}
    */
-  static async getUser(uid) {
+  async getUser(uid) {
     try {
-      const { data } = await axios.get(urls.user, {
+      const data = await this.http.get(urls.user, {
         params: { mid: uid },
         header: { ...mockHeader },
       })
@@ -103,9 +109,9 @@ class API {
    * @param {number} limit
    * @returns {Promise<import('./api').SearchResult>}
    */
-  static async searchUser(keyword, limit) {
+  async searchUser(keyword, limit) {
     try {
-      const { data } = await axios.get(urls.search, {
+      const data = await this.http.get(urls.search, {
         params: {
           keyword,
           search_type: 'bili_user',
@@ -144,9 +150,9 @@ class API {
    * @param {string} url
    * @returns {Promise<ArrayBuffer>}
    */
-  static async getImageBuffer(url) {
+  async getImageBuffer(url) {
     try {
-      const { data } = await axios.get(url, {
+      const data = await this.http.get(url, {
         responseType: 'arraybuffer',
       })
 
@@ -158,4 +164,4 @@ class API {
   }
 }
 
-module.exports = API
+module.exports = APIGenerator

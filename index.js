@@ -81,6 +81,8 @@ module.exports.schema = S.object({
  * @param {import('./index').Config} config
  */
 module.exports.apply = (ctx, config) => {
+  ctx.i18n.define('zh', require('./locales/zh'))
+
   config = {
     useDatabase: true,
     pollInterval: 60 * 1000,

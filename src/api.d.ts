@@ -1,3 +1,5 @@
+import { Context, Quester } from 'koishi'
+
 interface ErrorCode {
   error?: number
 }
@@ -29,7 +31,7 @@ interface UserData {
   live: boolean
 }
 
-declare namespace API {
+declare namespace APIGenerator {
   export interface SearchDataItem {
     uid: number
     username: string
@@ -47,12 +49,14 @@ declare namespace API {
   export type SearchResult = ErrorCode & SearchData
 }
 
-declare class API {
-  static getStatus(id: number): Promise<API.StatusResult>
-  static getRoom(id: number): Promise<API.RoomResult>
-  static getUser(id: number): Promise<API.UserResult>
-  static searchUser(keyword: string, limit: number): Promise<API.SearchResult>
-  static getImageBuffer(url: string): Promise<ArrayBuffer>
+declare class APIGenerator {
+  http: Quester
+  constructor(ctx: Context): void
+  getStatus(id: number): Promise<APIGenerator.StatusResult>
+  getRoom(id: number): Promise<APIGenerator.RoomResult>
+  getUser(id: number): Promise<APIGenerator.UserResult>
+  searchUser(keyword: string, limit: number): Promise<APIGenerator.SearchResult>
+  getImageBuffer(url: string): Promise<ArrayBuffer>
 }
 
-export = API
+export = APIGenerator
