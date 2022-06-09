@@ -1,5 +1,3 @@
-const API = require('./api')
-
 /**
  * @param {string} module
  * @returns {boolean}
@@ -23,9 +21,10 @@ const iconSize = 128
 
 /**
  * @param {string} url
+ * @param {import('koishi').Context?} ctx
  * @returns {Promise<string>} Resized base64 image or https link
  */
-const getUserIcon = async (url) => {
+const getUserIcon = async (url, ctx) => {
   switch (imageProcessor) {
     case 'canvas': {
       const { loadImage, createCanvas } = require('canvas')
@@ -49,6 +48,8 @@ const getUserIcon = async (url) => {
     }
     case 'sharp': {
       const sharp = require('sharp')
+      const APIGenerator = require('./api')
+      const API = new APIGenerator(ctx)
 
       const userIconBuffer = await API.getImageBuffer(url)
 

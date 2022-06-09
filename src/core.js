@@ -111,7 +111,7 @@ module.exports = (ctx, config) => {
 
           status.live = update.live
           let userIcon
-          if (config.showIcon) userIcon = await getUserIcon(user.iconUrl)
+          if (config.showIcon) userIcon = await getUserIcon(user.iconUrl, ctx)
 
           // Since this plugin is to support non-database mode,
           // the ctx.broadcast method cannot be used here as it's support to
@@ -285,7 +285,7 @@ module.exports = (ctx, config) => {
           const user = await API.getUser(keyword)
           if (user.error) return t('blive.search-uid-not-found', keyword)
 
-          const userIcon = await getUserIcon(user.iconUrl)
+          const userIcon = await getUserIcon(user.iconUrl, ctx)
 
           return t('blive.search-result-single',
             s('image', { url: userIcon }),
