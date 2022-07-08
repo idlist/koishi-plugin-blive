@@ -26,6 +26,7 @@ class UserIconGetter {
    * @param {import('koishi').Context} ctx
    */
   constructor(ctx) {
+    this.ctx = ctx
     this.api = new APIGenerator(ctx)
   }
 
@@ -33,7 +34,7 @@ class UserIconGetter {
    * @param {string} url
    * @returns {Promise<string>} Resized base64 image or https link
    */
-  get(url) {
+  async get(url) {
     switch (imageProcessor) {
       case 'canvas': {
         const { loadImage, createCanvas } = require('canvas')
@@ -58,7 +59,7 @@ class UserIconGetter {
       case 'sharp': {
         const sharp = require('sharp')
         const APIGenerator = require('./api')
-        const API = new APIGenerator(ctx)
+        const API = new APIGenerator(this.ctx)
 
         const userIconBuffer = await API.getImageBuffer(url)
 
