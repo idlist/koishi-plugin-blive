@@ -122,6 +122,10 @@ interface SubscriptionItem {
 <details>
 <summary><b>v1.0</b> （用于 Koishi v4）</summary>
 
+### v1.3.2
+
+- 尝试移除 axios 而改用内置的 ctx.http
+
 ### v1.3.1
 
 - 尝试修复了更新 Koishi 4.7 之后报检测到重复插件的错误。现在不报了，但是重载逻辑不一定对，希望是对的。

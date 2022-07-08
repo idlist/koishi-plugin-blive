@@ -1,3 +1,5 @@
+const APIGenerator = require('./api')
+
 /**
  * @param {string} module
  * @returns {boolean}
@@ -19,47 +21,55 @@ if (hasModule('sharp')) imageProcessor = 'sharp'
 
 const iconSize = 128
 
-/**
- * @param {string} url
- * @param {import('koishi').Context?} ctx
- * @returns {Promise<string>} Resized base64 image or https link
- */
-const getUserIcon = async (url, ctx) => {
-  switch (imageProcessor) {
-    case 'canvas': {
-      const { loadImage, createCanvas } = require('canvas')
+class UserIconGetter {
+  /**
+   * @param {import('koishi').Context} ctx
+   */
+  constructor(ctx) {
+    this.api = new APIGenerator(ctx)
+  }
 
-      const userIconImage = await loadImage(url)
-      const canvas = createCanvas(iconSize, iconSize)
-      const c = canvas.getContext('2d')
-      c.drawImage(userIconImage, 0, 0, iconSize, iconSize)
+  /**
+   * @param {string} url
+   * @returns {Promise<string>} Resized base64 image or https link
+   */
+  get(url) {
+    switch (imageProcessor) {
+      case 'canvas': {
+        const { loadImage, createCanvas } = require('canvas')
 
-      return 'base64://' + canvas.toBuffer('image/png').toString('base64')
+        const userIconImage = await loadImage(url)
+        const canvas = createCanvas(iconSize, iconSize)
+        const c = canvas.getContext('2d')
+        c.drawImage(userIconImage, 0, 0, iconSize, iconSize)
+
+        return 'base64://' + canvas.toBuffer('image/png').toString('base64')
+      }
+      case 'skia-canvas': {
+        const { loadImage, Canvas } = require('skia-canvas')
+
+        const userIconImage = await loadImage(url)
+        const canvas = new Canvas(iconSize, iconSize)
+        const c = canvas.getContext('2d')
+        c.drawImage(userIconImage, 0, 0, iconSize, iconSize)
+
+        return 'base64://' + canvas.toBuffer('image/png').toString('base64')
+      }
+      case 'sharp': {
+        const sharp = require('sharp')
+        const APIGenerator = require('./api')
+        const API = new APIGenerator(ctx)
+
+        const userIconBuffer = await API.getImageBuffer(url)
+
+        const userIcon = sharp(userIconBuffer)
+        userIcon.resize({ width: iconSize, height: iconSize })
+        return 'base64://' + (await userIcon.toBuffer()).toString('base64')
+      }
+      default:
+        return url
     }
-    case 'skia-canvas': {
-      const { loadImage, createCanvas } = require('canvas')
-
-      const userIconImage = await loadImage(url)
-      const canvas = createCanvas(iconSize, iconSize)
-      const c = canvas.getContext('2d')
-      c.drawImage(userIconImage, 0, 0, iconSize, iconSize)
-
-      return 'base64://' + canvas.toBuffer('image/png').toString('base64')
-    }
-    case 'sharp': {
-      const sharp = require('sharp')
-      const APIGenerator = require('./api')
-      const API = new APIGenerator(ctx)
-
-      const userIconBuffer = await API.getImageBuffer(url)
-
-      const userIcon = sharp(userIconBuffer)
-      userIcon.resize({ width: iconSize, height: iconSize })
-      return 'base64://' + (await userIcon.toBuffer()).toString('base64')
-    }
-    default:
-      return url
   }
 }
 
-module.exports = getUserIcon
+module.exports = UserIconGetter

@@ -2,7 +2,7 @@ const { inspect } = require('util')
 const { Random, Logger, sleep, s, t } = require('koishi')
 const APIGenerator = require('./api')
 const Monitor = require('./monitor')
-const getUserIcon = require('./get-user-icon')
+const UserIconGetter = require('./get-user-icon')
 
 /**
  * @param {import('koishi').Context} ctx
@@ -11,6 +11,7 @@ const getUserIcon = require('./get-user-icon')
 module.exports = (ctx, config) => {
   const logger = new Logger('blive')
   const API = new APIGenerator(ctx)
+  const iconGetter = new UserIconGetter(ctx)
 
   /** @type {Monitor} */
   let monitor
@@ -111,7 +112,7 @@ module.exports = (ctx, config) => {
 
           status.live = update.live
           let userIcon
-          if (config.showIcon) userIcon = await getUserIcon(user.iconUrl, ctx)
+          if (config.showIcon) userIcon = await iconGetter.get(user.iconUrl)
 
           // Since this plugin is to support non-database mode,
           // the ctx.broadcast method cannot be used here as it's support to
@@ -285,7 +286,7 @@ module.exports = (ctx, config) => {
           const user = await API.getUser(keyword)
           if (user.error) return t('blive.search-uid-not-found', keyword)
 
-          const userIcon = await getUserIcon(user.iconUrl, ctx)
+          const userIcon = await iconGetter.get(user.iconUrl)
 
           return t('blive.search-result-single',
             s('image', { url: userIcon }),
