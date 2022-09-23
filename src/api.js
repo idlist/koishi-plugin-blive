@@ -1,6 +1,7 @@
 const { Logger } = require('koishi')
 
 const urls = {
+  home: 'https://bilibili.com',
   status: 'https://api.live.bilibili.com/room/v1/Room/room_init',
   room: 'https://api.live.bilibili.com/live_user/v1/Master/info',
   user: 'https://api.bilibili.com/x/space/acc/info',
@@ -82,8 +83,11 @@ class APIGenerator {
         params: { mid: uid },
         header: { ...mockHeader },
       })
-      if (data.code) return { error: data.code }
-
+      if (data.code) {
+        logger.debug('Bilibili seems to reject the request:')
+        logger.debug(data)
+        return { error: data.code }
+      }
       const payload = data.data
 
       return {
@@ -111,10 +115,23 @@ class APIGenerator {
    */
   async searchUser(keyword, limit) {
     try {
+      const cookiesProbe = await this.http.axios(urls.home, {
+        method: 'get',
+        header: { ...mockHeader },
+        withCredentials: true,
+      })
+
+      const cookies = cookiesProbe.headers['set-cookie']
+      const setCookies = cookies.map(c => c.split(';')[0]).join('; ')
+
       const data = await this.http.get(urls.search, {
         params: {
           keyword,
           search_type: 'bili_user',
+        },
+        headers: {
+          ...mockHeader,
+          cookie: setCookies,
         },
       })
 

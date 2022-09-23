@@ -250,7 +250,7 @@ module.exports = (ctx, config) => {
       if (options.name) {
         try {
           const search = await API.searchUser(keyword, config.searchPageLimit)
-          if (search.error) return t('blive.network-error')
+          if (search.error) return t('blive.error-network')
 
           if (!search.length) return t('blive.search-name-no-result', keyword)
 
