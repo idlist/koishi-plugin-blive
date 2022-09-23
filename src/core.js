@@ -10,7 +10,7 @@ const UserIconGetter = require('./get-user-icon')
  */
 module.exports = (ctx, config) => {
   const logger = new Logger('blive')
-  const API = new APIGenerator(ctx)
+  const API = new APIGenerator(ctx, config.sessdata)
   const iconGetter = new UserIconGetter(ctx)
 
   /** @type {Monitor} */
@@ -284,7 +284,7 @@ module.exports = (ctx, config) => {
           }
 
           const user = await API.getUser(keyword)
-          if (user.error) return t('blive.search-uid-not-found', keyword)
+          if (user.error) return t('blive.search-uid-error', keyword)
 
           const userIcon = await iconGetter.get(user.iconUrl)
 

@@ -18,9 +18,10 @@ class APIGenerator {
   /**
    * @param {import('koishi').Context} ctx
    */
-  constructor(ctx) {
+  constructor(ctx, sessdata) {
     /** @type {import('koishi').Quester} */
     this.http = ctx.http
+    this.sessdata = sessdata
   }
   /**
    * @param {number} id
@@ -81,11 +82,15 @@ class APIGenerator {
     try {
       const data = await this.http.get(urls.user, {
         params: { mid: uid },
-        header: { ...mockHeader },
+        headers: {
+          ...mockHeader,
+          cookie: `SESSDATA=${this.sessdata}`,
+        },
       })
+
       if (data.code) {
-        logger.debug('Bilibili seems to reject the request:')
-        logger.debug(data)
+        logger.warn('Bilibili seems to reject the request:')
+        logger.warn(data)
         return { error: data.code }
       }
       const payload = data.data

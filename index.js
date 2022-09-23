@@ -31,7 +31,7 @@ t.set('blive', {
   'search-name': '指定关键字为主播用户名',
   'search-multiple': '请仅指定一种关键字类型。',
   'search-input-invalid': '查询所使用的关键字无效。',
-  'search-uid-not-found': '没有找到 UID 为 {0} 的用户。',
+  'search-uid-error': '查找 UID 为 {0} 的用户时出现错误，可能因为该用户不存在或其他未知原因。',
   'search-room-not-found': '没有找到房间号为 {0} 的用户。',
   'search-name-no-result': '没有找到包含关键字 {0} 的用户。',
   'search-result-single': '查询结果：\n{0}\n{1} （UID {2} / 直播间 {3}）\n个性签名：{4}{5}',
@@ -49,6 +49,8 @@ t.set('blive', {
 module.exports.name = 'blive'
 
 module.exports.schema = S.object({
+  sessdata: S.string().default('')
+    .description('SESSDATA'),
   useDatabase: S.boolean().default(true)
     .description('是否使用数据库。在没有配置数据库的情况下，即使打开这个选项为也无法启用数据库。'),
   pollInterval: S.number().default(60000)
