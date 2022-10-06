@@ -1,8 +1,19 @@
 const { inspect } = require('util')
-const { Random, Logger, sleep, s, t } = require('koishi')
+const { Random, Logger, sleep, segment } = require('koishi')
 const APIGenerator = require('./api')
 const Monitor = require('./monitor')
 const UserIconGetter = require('./get-user-icon')
+
+const lines = (...line) => {
+  return line.join('')
+}
+
+const liverInfo = (username, uid, id) => {
+  return lines(
+    `${username}（UID ${uid} / `,
+    `${id ? `直播间 ${id}` : '直播间未开通'}）`,
+  )
+}
 
 /**
  * @param {import('koishi').Context} ctx
@@ -143,18 +154,16 @@ module.exports = (ctx, config) => {
             ctx.bots.get(`${b.platform}:${b.assignee}`).sendMessage(
               b.id,
               status.live
-                // {0}{1}\n{2} 开播了：\n{3}\n{4}
-                ? t('blive.live-start',
-                  user.coverUrl ? s('image', { url: user.coverUrl }) + (userIcon ? '\n' : '') : '',
-                  userIcon ? s('image', { url: userIcon }) : '',
-                  t('blive.user', user.username, user.uid, user.id),
-                  user.title,
+                ? lines(
+                  user.coverUrl ? `${segment('image', { url: user.coverUrl })}\n` : '',
+                  userIcon ? `${segment('image', { url: userIcon }) + '\n'}` : '',
+                  `${liverInfo(user.username, user.uid, user.id)} 开播了：\n`,
+                  `${user.title}\n`,
                   `https://live.bilibili.com/${user.id}`,
                 )
-                // {0}{1} 的直播结束了。
-                : t('blive.live-end',
-                  userIcon ? s('image', { url: userIcon }) + '\n' : '',
-                  t('blive.user', user.username, user.uid, user.id),
+                : lines(
+                  userIcon ? `${segment('image', { url: userIcon })}\n` : '',
+                  `${liverInfo(user.username, user.uid, user.id)} 的直播结束了。`,
                 ),
               b.guildId,
             )
@@ -183,11 +192,11 @@ module.exports = (ctx, config) => {
     ctx.emit('blive/ready')
   })
 
-  ctx.command('blive', t('blive.desc'))
-    .usage(t('blive.hint'))
+  ctx.command('blive', 'bilibili 直播订阅')
+    .usage('请使用直播间号进行操作。可以通过 search 子命令进行相关的搜索。')
 
   // List all subscribed rooms.
-  ctx.command('blive.list [page]', t('blive.list'))
+  ctx.command('blive.list [page]', '查看已订阅的直播')
     .channelFields(['blive'])
     .action(async ({ session }, page) => {
       const cid = session.cid
@@ -202,12 +211,12 @@ module.exports = (ctx, config) => {
             platform: session.platform, id: session.channelId,
           }, ['blive']))[0]
 
-          if (!channel.blive || !Object.keys(channel.blive).length) return t('blive.list-empty')
+          if (!channel.blive || !Object.keys(channel.blive).length) return '本群没有订阅直播。'
 
           list = Object.entries(channel.blive)
             .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
         } else {
-          if (!(cid in localList)) return t('blive.list-empty')
+          if (!(cid in localList)) return '本群没有订阅直播。'
 
           list = Object.entries(localList[cid])
             .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
@@ -224,25 +233,29 @@ module.exports = (ctx, config) => {
           list = list.slice((page - 1) * config.pageLimit, page * config.pageLimit)
         }
 
-        return (paging ? t('blive.list-prologue-paging', page, maxPage) : t('blive.list-prologue'))
-          + list.map(([id, { uid, username }]) => t('blive.user', username, uid, id)).join('\n')
+        return lines(
+          paging
+            ? `本群已订阅的直播有（第 ${page}/${maxPage} 页）：\n`
+            : '本群已订阅的直播有：\n',
+          list.map(([id, { uid, username }]) => liverInfo(username, uid, id)).join('\n'),
+        )
       } catch (err) {
         logger.warn(err)
-        return t('blive.error-unknown')
+        return '发生了未知错误，请稍后尝试。'
       }
     })
 
   // Some simple search utility.
   // This command does not involve database operations.
-  ctx.command('blive.search <keyword>', t('blive.search'))
-    .option('room', '-r ' + t('blive.search-room'))
-    .option('uid', '-u ' + t('blive.search-uid'))
-    .option('name', '-n ' + t('blive.search-name'))
+  ctx.command('blive.search <keyword>', '查询直播间')
+    .option('room', '-r ' + '指定关键字为直播间号（默认）')
+    .option('uid', '-u ' + '指定关键字为主播 UID')
+    .option('name', '-n ' + '指定关键字为主播用户名')
     .action(async ({ session, options }, keyword) => {
       if (!keyword) return session.execute('help blive.search')
 
       if (options.room + options.uid + options.name > 1) {
-        return t('blive.search-multiple')
+        return '请仅指定一种关键字类型。'
       }
 
       if (!Object.keys(options).length) options.room = true
@@ -250,55 +263,61 @@ module.exports = (ctx, config) => {
       if (options.name) {
         try {
           const search = await API.searchUser(keyword, config.searchPageLimit)
-          if (search.error) return t('blive.error-network')
+          if (search.error) return '发生了网络错误，请稍后再尝试。'
 
-          if (!search.length) return t('blive.search-name-no-result', keyword)
+          if (!search.length) return `没有找到包含关键字 ${keyword} 的用户。`
 
-          return t('blive.search-result-list',
-            keyword,
-            search.length,
+          return lines(
+            `查询 ${keyword} 的结果（共 ${search.length} 条`,
             search.length > config.searchPageLimit
-              ? t('blive.search-result-limit', config.searchPageLimit)
-              : '',
+              ? `，显示前 ${config.searchPageLimit} 条）\n`
+              : '）\n'
+            ,
             search.list
-              .map(user => t('blive.user',
-                user.username,
-                user.uid,
-                user.id ? user.id : t('blive.not-have-room')))
+              .map(({ username, uid, id }) => liverInfo(username, uid, id))
               .join('\n'),
           )
         } catch (err) {
           logger.warn(err)
-          return t('blive.error-unknown')
+          return '发生了未知错误，请稍后尝试。'
         }
       } else {
         try {
           keyword = parseInt(keyword)
-          if (isNaN(keyword)) return t('blive.search-input-invalid')
+          if (isNaN(keyword)) return '提供的房间号不为数字。'
 
           if (options.room) {
             const status = await API.getStatus(keyword)
-            if (status.error) return t('blive.search-room-not-found', keyword)
+            if (status.error) return `没有找到房间号为 ${keyword} 的用户。`
 
             keyword = status.uid
           }
 
           const user = await API.getUser(keyword)
-          if (user.error) return t('blive.search-uid-error', keyword)
+          if (user.error) {
+            return lines(
+              `查找 UID 为 ${keyword} 的用户时出现错误，`,
+              '可能因为该用户不存在或其他未知原因。',
+            )
+          }
 
           const userIcon = await iconGetter.get(user.iconUrl)
 
-          return t('blive.search-result-single',
-            s('image', { url: userIcon }),
-            user.username,
-            user.uid,
-            user.id ? user.id : t('blive.not-have-room'),
-            user.profile,
-            user.hasRoom ? '\n' + (user.live ? t('blive.on-live') : t('blive.not-on-live')) : '',
+          return lines(
+            '查询结果：\n',
+            segment('image', { url: userIcon }),
+            liverInfo(user.username, user.uid, user.id),
+            `\n个性签名：${user.profile}`,
+            user.hasRoom
+              ? lines(
+                '\n',
+                user.live ? '直播间正在直播。' : '直播间未开播。',
+              )
+              : '',
           )
         } catch (err) {
           logger.warn(err)
-          return t('blive.error-unknown')
+          return '发生了未知错误，请稍后再尝试。'
         }
       }
     })
@@ -308,7 +327,7 @@ module.exports = (ctx, config) => {
   if (!config.useDatabase) return
 
   // Add room to subscription list.
-  ctx.command('blive.add <id>', t('blive.add'), { authority: 2 })
+  ctx.command('blive.add <id>', '订阅直播', { authority: 2 })
     .channelFields(['blive'])
     .action(async ({ session }, id) => {
       if (!id) return session.execute('help blive.add')
@@ -320,25 +339,25 @@ module.exports = (ctx, config) => {
 
         if (config.useDatabase &&
           Object.keys(channel.blive).length > config.maxSubsPerChannel) {
-          return t('blive.subs-maxed-out', config.maxSubsPerChannel)
+          return `最多订阅 ${config.maxSubsPerChannel} 位主播，本群已达到上限。`
         }
 
         if (id in channel.blive) {
           const { username, uid } = channel.blive[id]
-          return t('blive.add-duplicate', t('blive.user', username, uid, id))
+          return `本群已经订阅了主播 ${liverInfo(username, uid, id)}`
         }
 
         const status = await API.getStatus(id)
-        if (status.error == -418) return t('blive.error-network')
-        if (status.error) return t('blive.id-not-found', id)
+        if (status.error == -418) return '发生了网络错误，请稍后尝试。'
+        if (status.error) return `查询的直播间 ${id} 不存在。`
 
         if (status.id in channel.blive) {
           const { username, uid } = channel.blive[status.id]
-          return t('blive.add-duplicate', t('blive.user', username, uid, status.id))
+          return `本群已经订阅了主播 ${liverInfo(username, uid, status.id)}`
         }
 
         const user = await API.getUser(status.uid)
-        if (user.error) return t('blive.error-network')
+        if (user.error) return '发生了网络错误，请稍后尝试。'
 
         channel.blive[user.id] = {
           uid: user.uid,
@@ -354,15 +373,15 @@ module.exports = (ctx, config) => {
           live: status.live,
         })
 
-        return t('blive.add-success', t('blive.user', user.username, user.uid, user.id))
+        return `成功订阅主播 ${liverInfo(user.username, user.uid, user.id)} ！`
       } catch (err) {
         logger.warn(err)
-        return t('blive.error-unknown')
+        return '发生了未知错误，请稍后尝试。'
       }
     })
 
   // Remove room from subscription list.
-  ctx.command('blive.remove <id>', t('blive.remove'), { authority: 2 })
+  ctx.command('blive.remove <id>', '取消直播订阅', { authority: 2 })
     .channelFields(['blive'])
     .action(async ({ session }, id) => {
       if (!id) return session.execute('help blive.remove')
@@ -381,12 +400,12 @@ module.exports = (ctx, config) => {
             guildId: session.guildId,
             id: id,
           })
-          return t('blive.remove-success', t('blive.user', user.username, user.uid, id))
+          return `成功取消订阅主播 ${liverInfo(user.username, user.uid, id)}。`
         }
 
         const status = await API.getStatus(id)
-        if (status.error == -418) return t('blive.error-network')
-        if (status.error) return t('blive.id-not-found')
+        if (status.error == -418) return '发生了网络错误，请稍后尝试。'
+        if (status.error) return `查询的直播间 ${status.id} 不存在。`
 
         if (status.id in channel.blive) {
           const user = channel.blive[status.id]
@@ -396,13 +415,13 @@ module.exports = (ctx, config) => {
             channelId: session.channelId,
             id: status.id,
           })
-          return t('blive.remove-success', t('blive.user', user.username, user.uid, status.id))
+          return `成功取消订阅主播 ${liverInfo(user.username, user.uid, status.id)}。`
         }
 
-        return t('blive.id-not-subs', id)
+        return `本群没有订阅直播间 ${id}。`
       } catch (err) {
         logger.warn(err)
-        return t('blive.error-unknown')
+        return '发生了未知错误，请稍后尝试。'
       }
     })
 }
