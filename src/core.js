@@ -151,7 +151,7 @@ module.exports = (ctx, config) => {
           let nameUpdated = false
 
           for (const b of broadcastList) {
-            ctx.bots.get(`${b.platform}:${b.assignee}`).sendMessage(
+            ctx.bots[`${b.platform}:${b.assignee}`].sendMessage(
               b.id,
               status.live
                 ? lines(
