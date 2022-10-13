@@ -130,6 +130,10 @@ interface SubscriptionItem {
 <details>
 <summary><b>v1.0</b> （用于 Koishi v4）</summary>
 
+### v1.4.1
+
+- 增加 `package.json` 中的 `koishi` 字段。
+
 ### v1.4.0
 
 - 由于 `template` API 于 Koishi 4.9 被移除，而新的 `ctx.i18n` 对主动推送的支持难度较高，因此字符串自定义功能被放弃。如果有此类需求请考虑 Fork 或提出对 `ctx.i18n` 进行支持的 Pull Request。
@@ -137,11 +141,13 @@ interface SubscriptionItem {
 
 ### v1.3.3
 
+*此版本没有上传到 npm，如需要使用请直接下载源码*
+
 - 由于三相之力指示器事件，B 站对部分接口增加了 Cookie（SESSDATA）鉴权，导致此插件必须取得此内容才能正常工作。
 
 ### v1.3.2
 
-- 尝试移除 axios 而改用内置的 ctx.http、
+- 尝试移除 axios 而改用内置的 ctx.http。
 
 ### v1.3.1
 

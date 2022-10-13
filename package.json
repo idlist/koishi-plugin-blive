@@ -1,6 +1,6 @@
 {
   "name": "koishi-plugin-blive",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Bilibili live subscription for Koishi.js.",
   "keywords": [
     "koishi",
@@ -25,6 +25,16 @@
     "index.d.ts",
     "index.js"
   ],
+  "koishi": {
+    "description": {
+      "zh": "B 站直播订阅",
+      "en": "Bilibili live subscription"
+    },
+    "service": {
+      "optional": ["database"]
+    },
+    "locales": ["zh"]
+  },
   "main": "index.js",
   "scripts": {},
   "peerDependencies": {
