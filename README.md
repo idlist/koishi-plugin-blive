@@ -19,6 +19,8 @@ B 站直播订阅。在主播上下播时进行提醒。
 
 ## 安装方法
 
+通过网页控制台安装此插件，或通过命令行：
+
 ```shell
 npm i koishi-plugin-blive
 ```
@@ -67,13 +69,15 @@ npm i koishi-plugin-blive
 
 `--name`, `-n`: 使用用户名进行搜索。此时 `keyword` 为用户名关键字，默认将显示前 10 条结果，可使用配置项更改显示条数。
 
-## 可选功能
-
-在安装了 `sharp`、`node-canvas` 或 `skia-canvas` 的情况下，这个插件会用其缩小主播头像。优先级为 `sharp` > `skia-canvas` > `node-canvas` > 什么也没有装。
-
 ## 插件配置项
 
-这个插件无需任何配置项即可使用，同时也提供了一些可能会用到的配置项。一些不太可能会用到的配置项就摸了。你也可以在配置时借助 JSDoc 自行查看。
+这个插件需要配置以下配置项以使用：
+
+| 配置项 | 类型 | 说明 |
+| - | - | - |
+| `sessdata` | string | B 站登录 Cookie 中的 SESSDATA 项 **\*1** |
+
+**\*1** 你可以通过各种查看 Cookie 的方法复制粘贴此项。请对此内容保密（如 .gitignore 相关文件）以保护你的账号。
 
 | 配置项 | 默认值 | 说明 |
 | - | - | - |
@@ -113,6 +117,10 @@ interface SubscriptionItem {
 }
 ```
 
+## 可选功能
+
+在安装了 `sharp`、`node-canvas` 或 `skia-canvas` 的情况下，这个插件会用其缩小主播头像。优先级为 `sharp` > `skia-canvas` > `node-canvas` > 什么也没有装。
+
 ## 已知问题
 
 因为并没有多 bot 和对 QQ 频道的测试环境，所以对这些情况的支持可能会有问题。
@@ -122,9 +130,19 @@ interface SubscriptionItem {
 <details>
 <summary><b>v1.0</b> （用于 Koishi v4）</summary>
 
+### v1.4.0
+
+- 由于 `template` API 于 Koishi 4.9 被移除，而新的 `ctx.i18n` 对主动推送的支持难度较高，因此字符串自定义功能被放弃。
+  如果有此类需求请考虑 Fork 或提出对 `ctx.i18n` 进行支持的 Pull Request。
+- 重载逻辑使用的事件从 `service` 变更为 `internal/service`，导致不兼容 Koishi 4.7 前的版本。
+
+### v1.3.3
+
+- 由于三相之力指示器事件，B 站对部分接口增加了 Cookie（SESSDATA）鉴权，导致此插件必须取得此内容才能正常工作。
+
 ### v1.3.2
 
-- 尝试移除 axios 而改用内置的 ctx.http
+- 尝试移除 axios 而改用内置的 ctx.http、
 
 ### v1.3.1
 
