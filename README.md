@@ -132,9 +132,8 @@ interface SubscriptionItem {
 
 ### v1.4.0
 
-- 由于 `template` API 于 Koishi 4.9 被移除，而新的 `ctx.i18n` 对主动推送的支持难度较高，因此字符串自定义功能被放弃。
-  如果有此类需求请考虑 Fork 或提出对 `ctx.i18n` 进行支持的 Pull Request。
-- 重载逻辑使用的事件从 `service` 变更为 `internal/service`，导致不兼容 Koishi 4.7 前的版本。
+- 由于 `template` API 于 Koishi 4.9 被移除，而新的 `ctx.i18n` 对主动推送的支持难度较高，因此字符串自定义功能被放弃。如果有此类需求请考虑 Fork 或提出对 `ctx.i18n` 进行支持的 Pull Request。
+- 重载逻辑使用的事件从 `service` 变更为 `internal/service`，以及 `ctx.bots.get()` 变更为 `ctx.bots[]` 此插件版本不兼容 Koishi 4.9 以前的版本。
 
 ### v1.3.3
 
