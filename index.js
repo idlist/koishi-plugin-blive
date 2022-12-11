@@ -58,5 +58,9 @@ module.exports.apply = (ctx, config) => {
       ctx.registry.delete(core)
       ctx.plugin(core, config)
     }
+    if (name === 'database' && !ctx.database) {
+      ctx.registry.delete(core)
+      ctx.plugin(core, { ...config, useDatabase: false })
+    }
   })
 }

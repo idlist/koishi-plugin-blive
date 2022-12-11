@@ -132,18 +132,20 @@ interface SubscriptionItem {
 
 ### v1.4.1
 
-- 增加 `package.json` 中的 `koishi` 字段。
+- 新增 `package.json` 中的 `koishi` 字段。
 
 ### v1.4.0
 
+*此插件需要 Koishi 版本至少为 v4.9。如有需要，请使用 v1.3.3。*
+
 - 由于 `template` API 于 Koishi 4.9 被移除，而新的 `ctx.i18n` 对主动推送的支持难度较高，因此字符串自定义功能被放弃。如果有此类需求请考虑 Fork 或提出对 `ctx.i18n` 进行支持的 Pull Request。
-- 重载逻辑使用的事件从 `service` 变更为 `internal/service`，以及 `ctx.bots.get()` 变更为 `ctx.bots[]` 此插件版本不兼容 Koishi 4.9 以前的版本。
+- 重载逻辑使用的事件从 `service` 变更为 `internal/service`，以及 `ctx.bots.get()` 变更为 `ctx.bots[]`。
 
 ### v1.3.3
 
 *此版本没有上传到 npm，如需要使用请直接下载源码*
 
-- 由于三相之力指示器事件，B 站对部分接口增加了 Cookie（SESSDATA）鉴权，导致此插件必须取得此内容才能正常工作。
+- **\[Breaking\]** 由于三相之力指示器事件，B 站对部分接口增加了 Cookie（SESSDATA）鉴权，导致此插件必须取得此内容才能正常工作。对应的配置项为 `sessdata`。
 
 ### v1.3.2
 
