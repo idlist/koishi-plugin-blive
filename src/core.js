@@ -1,9 +1,12 @@
 const { inspect } = require('util')
-const { Random, Logger, sleep, segment } = require('koishi')
+const { Random, Logger, sleep, h } = require('koishi')
 const APIGenerator = require('./api')
 const Monitor = require('./monitor')
 const UserIconGetter = require('./get-user-icon')
 
+/**
+ * @param  {...string} line
+ */
 const lines = (...line) => {
   return line.join('')
 }
@@ -155,14 +158,14 @@ module.exports = (ctx, config) => {
               b.id,
               status.live
                 ? lines(
-                  user.coverUrl ? `${segment('image', { url: user.coverUrl })}\n` : '',
-                  userIcon ? `${segment('image', { url: userIcon }) + '\n'}` : '',
+                  user.coverUrl ? `${h('image', { url: user.coverUrl })}\n` : '',
+                  userIcon ? `${h('image', { url: userIcon })}\n` : '',
                   `${liverInfo(user.username, user.uid, user.id)} 开播了：\n`,
                   `${user.title}\n`,
                   `https://live.bilibili.com/${user.id}`,
                 )
                 : lines(
-                  userIcon ? `${segment('image', { url: userIcon })}\n` : '',
+                  userIcon ? `${h('image', { url: userIcon })}\n` : '',
                   `${liverInfo(user.username, user.uid, user.id)} 的直播结束了。`,
                 ),
               b.guildId,
@@ -177,7 +180,7 @@ module.exports = (ctx, config) => {
               localList[`${b.platform}:${b.id}`][user.id].username = user.username
             }
 
-            await sleep(ctx.app.options.delay.broadcast)
+            await sleep(ctx.root.options.delay.broadcast)
           }
 
           if (nameUpdated) {
@@ -305,7 +308,7 @@ module.exports = (ctx, config) => {
 
           return lines(
             '查询结果：\n',
-            segment('image', { url: userIcon }),
+            h('image', { url: userIcon }),
             liverInfo(user.username, user.uid, user.id),
             `\n个性签名：${user.profile}`,
             user.hasRoom
