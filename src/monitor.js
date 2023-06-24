@@ -2,14 +2,20 @@ const { Logger } = require('koishi')
 
 const logger = new Logger('blive')
 
+/**
+ * @typedef {import('../types/monitor').MonitorList} MonitorList
+ * @typedef {import('../types/monitor').MonitorAddArgs} MonitorAddArgs
+ * @typedef {import('../types/monitor').MonitorDeleteArgs} MonitorDeleteArgs
+ */
+
 class Monitor {
   constructor() {
-    /** @type {import('./monitor').MonitorList} */
+    /** @type {MonitorList} */
     this.list = {}
   }
 
   /**
-   * @param {import('./monitor').MonitorAddArgs} room
+   * @param {MonitorAddArgs} room
    */
   add(room) {
     if (room.id in this.list) {
@@ -33,7 +39,7 @@ class Monitor {
     const id = room.id
 
     if (id in this.list) {
-      this.list[id].channels = this.list[id].channels.filter(item => {
+      this.list[id].channels = this.list[id].channels.filter((item) => {
         return (
           item.platform != room.platform &&
           item.channelId != room.channelId &&

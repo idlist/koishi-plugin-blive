@@ -71,13 +71,7 @@ npm i koishi-plugin-blive
 
 ## 插件配置项
 
-这个插件需要配置以下配置项以使用：
-
-| 配置项 | 类型 | 说明 |
-| - | - | - |
-| `sessdata` | string | B 站登录 Cookie 中的 SESSDATA 项 **\*1** |
-
-**\*1** 你可以通过各种查看 Cookie 的方法复制粘贴此项。请对此内容保密（如 .gitignore 相关文件）以保护你的账号。
+这个插件现在似乎不需要配置就可以使用，并提供了一些可能用得到的配置项。
 
 | 配置项 | 默认值 | 说明 |
 | - | - | - |
@@ -129,6 +123,10 @@ interface SubscriptionItem {
 
 <details>
 <summary><b>v1.0</b> （用于 Koishi v4）</summary>
+
+### v1.5.0
+
+- 换用 wbi 鉴权接口以维持功能正常。SESSDATA 鉴权似乎不再必要，相关配置项被移除。如果哪天又要了就再加回来罢。
 
 ### v1.4.1
 

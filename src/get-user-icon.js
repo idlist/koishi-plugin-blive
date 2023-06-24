@@ -1,10 +1,10 @@
-const APIGenerator = require('./api')
+const ApiGenerator = require('./api')
 
 /**
  * @param {string} module
  * @returns {boolean}
  */
-const hasModule = module => {
+const hasModule = (module) => {
   try {
     require(module)
     return true
@@ -27,7 +27,7 @@ class UserIconGetter {
    */
   constructor(ctx) {
     this.ctx = ctx
-    this.api = new APIGenerator(ctx)
+    this.api = new ApiGenerator(ctx)
   }
 
   /**

@@ -5,15 +5,16 @@ interface BliverDetail {
 
 export type Blive = Record<string, BliverDetail>
 
-export interface DbChannel extends DbChannelBlive {
-  id: string
-  guildId?: string
-  platform: string
-  assignee: string
+export interface DatabaseBlive {
   blive: Blive
 }
 
-export type DbChannelBlive = Pick<DbChannel, 'blive'>
+export interface DatabaseChannel extends DatabaseBlive {
+  platform: string
+  id: string
+  guildId?: string
+  assignee: string
+}
 
 export type LocalList = Record<string, Blive>
 

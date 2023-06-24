@@ -1,8 +1,15 @@
 const { inspect } = require('util')
 const { Random, Logger, sleep, h } = require('koishi')
-const APIGenerator = require('./api')
+const ApiGenerator = require('./api')
 const Monitor = require('./monitor')
 const UserIconGetter = require('./get-user-icon')
+
+/**
+ * @typedef {import('../types/core').LocalList} LocalList
+ * @typedef {import('../types/core').DisplayList} DisplayList
+ * @typedef {import('../types/core').DatabaseBlive} DatabaseBlive
+ * @typedef {import('../types/core').DatabaseChannel} DatabaseChannel
+ */
 
 /**
  * @param  {...string} line
@@ -20,17 +27,17 @@ const liverInfo = (username, uid, id) => {
 
 /**
  * @param {import('koishi').Context} ctx
- * @param {import('../index').Config} config
+ * @param {import('@index').Config} config
  */
 module.exports = (ctx, config) => {
   const logger = new Logger('blive')
-  const API = new APIGenerator(ctx, config.sessdata)
+  const api = new ApiGenerator(ctx)
   const iconGetter = new UserIconGetter(ctx)
 
   /** @type {Monitor} */
   let monitor
 
-  /** @type {import('./core').LocalList} */
+  /** @type {LocalList} */
   const localList = {}
 
   let pollingHandler
@@ -50,14 +57,14 @@ module.exports = (ctx, config) => {
 
       monitor = new Monitor()
 
-      /** @type {import('./core').DbChannel[]} */
-      const allMonitors = await ctx.database.get(
+      /** @type {DatabaseChannel[]} */
+      const allMonitored = await ctx.database.get(
         'channel',
         {},
         ['platform', 'id', 'guildId', 'blive'],
       )
 
-      for (const { platform, id: channelId, blive, guildId } of allMonitors) {
+      for (const { platform, id: channelId, blive, guildId } of allMonitored) {
         if (!blive || Object.keys(blive).length == 0) continue
 
         for (const [id, { uid }] of Object.entries(blive)) {
@@ -80,10 +87,10 @@ module.exports = (ctx, config) => {
       const subscriptions = config.subscriptions ?? []
 
       for (const { platform, assignee, room, channel, guild } of subscriptions) {
-        const { id, uid, live } = await API.getStatus(parseInt(room))
+        const { id, uid, live } = await api.getStatus(parseInt(room))
         await sleep(50)
 
-        const { username } = await API.getRoom(uid)
+        const { username } = await api.getRoom(uid)
 
         monitor.add({
           platform: platform,
@@ -111,7 +118,7 @@ module.exports = (ctx, config) => {
       for (const [id, status] of Object.entries(monitor.list)) {
         try {
           await sleep(Random.int(10, 50))
-          const update = await API.getStatus(id)
+          const update = await api.getStatus(id)
           if (update.error) continue
 
           if (typeof status.live == 'undefined') {
@@ -121,7 +128,7 @@ module.exports = (ctx, config) => {
 
           if (status.live == update.live) continue
 
-          const user = await API.getUser(status.uid)
+          const user = await api.getUser(status.uid)
           if (user.error) continue
 
           status.live = update.live
@@ -132,15 +139,15 @@ module.exports = (ctx, config) => {
           // the ctx.broadcast method cannot be used here as it's support to
           // non-database situation is not complete.
 
-          /** @type {import('./core').DbChannel[]} */
+          /** @type {DatabaseChannel[]} */
           let broadcastList = []
 
           if (config.useDatabase) {
             broadcastList = await ctx.database.get('channel', {
-              $or: status.channels.map(c => ({ platform: c.platform, id: c.channelId })),
+              $or: status.channels.map((c) => ({ platform: c.platform, id: c.channelId })),
             }, ['platform', 'id', 'guildId', 'assignee', 'blive'])
           } else {
-            broadcastList = status.channels.map(channel => {
+            broadcastList = status.channels.map((channel) => {
               const { platform, channelId, guildId, assignee } = channel
               return {
                 platform: platform,
@@ -205,11 +212,11 @@ module.exports = (ctx, config) => {
       const cid = session.cid
 
       try {
-        /** @type {import('./core').DisplayList} */
+        /** @type {DisplayList} */
         let list = []
 
         if (config.useDatabase) {
-          /** @type {import('./core').DbChannelBlive} */
+          /** @type {DbChannelBlive} */
           const channel = (await ctx.database.get('channel', {
             platform: session.platform, id: session.channelId,
           }, ['blive']))[0]
@@ -265,7 +272,7 @@ module.exports = (ctx, config) => {
 
       if (options.name) {
         try {
-          const search = await API.searchUser(keyword, config.searchPageLimit)
+          const search = await api.searchUser(keyword, config.searchPageLimit)
           if (search.error) return '发生了网络错误，请稍后再尝试。'
 
           if (!search.length) return `没有找到包含关键字 ${keyword} 的用户。`
@@ -290,13 +297,13 @@ module.exports = (ctx, config) => {
           if (isNaN(keyword)) return '提供的房间号不为数字。'
 
           if (options.room) {
-            const status = await API.getStatus(keyword)
+            const status = await api.getStatus(keyword)
             if (status.error) return `没有找到房间号为 ${keyword} 的用户。`
 
             keyword = status.uid
           }
 
-          const user = await API.getUser(keyword)
+          const user = await api.getUser(keyword)
           if (user.error) {
             return lines(
               `查找 UID 为 ${keyword} 的用户时出现错误，`,
@@ -336,7 +343,7 @@ module.exports = (ctx, config) => {
       if (!id) return session.execute('help blive.add')
 
       try {
-        /** @type {import('./core').DbChannelBlive} */
+        /** @type {DatabaseBlive} */
         const channel = await session.observeChannel(['blive'])
         if (!channel.blive) channel.blive = {}
 
@@ -350,7 +357,7 @@ module.exports = (ctx, config) => {
           return `本群已经订阅了主播 ${liverInfo(username, uid, id)}`
         }
 
-        const status = await API.getStatus(id)
+        const status = await api.getStatus(id)
         if (status.error == -418) return '发生了网络错误，请稍后尝试。'
         if (status.error) return `查询的直播间 ${id} 不存在。`
 
@@ -359,7 +366,7 @@ module.exports = (ctx, config) => {
           return `本群已经订阅了主播 ${liverInfo(username, uid, status.id)}`
         }
 
-        const user = await API.getUser(status.uid)
+        const user = await api.getUser(status.uid)
         if (user.error) return '发生了网络错误，请稍后尝试。'
 
         channel.blive[user.id] = {
@@ -390,7 +397,7 @@ module.exports = (ctx, config) => {
       if (!id) return session.execute('help blive.remove')
 
       try {
-        /** @type {import('./core').DbChannelBlive} */
+        /** @type {DatabaseBlive} */
         const channel = await session.observeChannel(['blive'])
         if (!channel.blive) channel.blive = {}
 
@@ -406,7 +413,7 @@ module.exports = (ctx, config) => {
           return `成功取消订阅主播 ${liverInfo(user.username, user.uid, id)}。`
         }
 
-        const status = await API.getStatus(id)
+        const status = await api.getStatus(id)
         if (status.error == -418) return '发生了网络错误，请稍后尝试。'
         if (status.error) return `查询的直播间 ${status.id} 不存在。`
 

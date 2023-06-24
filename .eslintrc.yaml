@@ -23,3 +23,4 @@ rules:
   semi: [warn, never]
   quotes: [warn, single]
   comma-dangle: [warn, always-multiline]
+  arrow-parens: [warn, always]

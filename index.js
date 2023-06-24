@@ -4,8 +4,6 @@ const core = require('./src/core')
 module.exports.name = 'blive'
 
 module.exports.schema = S.object({
-  sessdata: S.string().default('').required()
-    .description('B 站登录后网页 Cookies 中的 SESSDATA 项。'),
   useDatabase: S.boolean().default(true)
     .description('是否使用数据库。在没有配置数据库的情况下，即使打开这个选项为也无法启用数据库。'),
   pollInterval: S.number().default(60000)
