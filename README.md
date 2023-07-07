@@ -124,6 +124,11 @@ interface SubscriptionItem {
 <details>
 <summary><b>v1.0</b> （用于 Koishi v4）</summary>
 
+### v1.5.1
+
+- 删除了多余的 `console.log`。
+- 修复了一个会导致查询用户时永远显示该主播为开播的 bug。
+
 ### v1.5.0
 
 - 换用 wbi 鉴权接口以维持功能正常。SESSDATA 鉴权似乎不再必要，相关配置项被移除。如果哪天又要了就再加回来罢。

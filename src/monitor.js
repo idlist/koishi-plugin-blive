@@ -33,7 +33,7 @@ class Monitor {
   }
 
   /**
-   * @param {import('./monitor').MonitorDeleteArgs} room
+   * @param {MonitorDeleteArgs} room
    */
   remove(room) {
     const id = room.id

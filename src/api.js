@@ -107,8 +107,6 @@ class ApiGenerator {
         },
       })
 
-      console.log(data)
-
       if (data.code) {
         logger.warn('Bilibili seems to reject the request:')
         logger.warn(data)
@@ -128,7 +126,7 @@ class ApiGenerator {
         title: room?.title,
         coverUrl: room?.cover,
         hasRoom: room ? true : false,
-        live: room ? false : (room.liveStatus ? true : false),
+        live: room ? (room.liveStatus ? true : false) : false,
       }
     } catch (err) {
       logger.warn('Something wrong happen in API - getUser')
