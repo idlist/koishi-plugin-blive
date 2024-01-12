@@ -43,9 +43,7 @@ module.exports = (ctx, config) => {
   let pollingHandler
 
   ctx.on('dispose', () => {
-    ctx.on('blive/ready', () => {
-      clearInterval(pollingHandler)
-    })
+    clearInterval(pollingHandler)
   })
 
   ctx.on('ready', async () => {
@@ -198,8 +196,6 @@ module.exports = (ctx, config) => {
         }
       }
     }, config.pollInterval)
-
-    ctx.emit('blive/ready')
   })
 
   ctx.command('blive', 'bilibili 直播订阅')
