@@ -3,6 +3,10 @@ const core = require('./src/core')
 
 module.exports.name = 'blive'
 
+module.exports.inject = {
+  optional: ['database'],
+}
+
 module.exports.schema = S.object({
   useDatabase: S.boolean().default(true)
     .description('是否使用数据库。在没有配置数据库的情况下，即使打开这个选项为也无法启用数据库。'),
