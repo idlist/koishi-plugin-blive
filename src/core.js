@@ -158,7 +158,7 @@ module.exports = (ctx, config) => {
 
           let nameUpdated = false
 
-          for (const b of broadcastList) {
+          for await (const b of broadcastList) {
             ctx.bots[`${b.platform}:${b.assignee}`].sendMessage(
               b.id,
               status.live
@@ -185,7 +185,7 @@ module.exports = (ctx, config) => {
               localList[`${b.platform}:${b.id}`][user.id].username = user.username
             }
 
-            await sleep(ctx.root.options.delay.broadcast)
+            await sleep(100)
           }
 
           if (nameUpdated) {
