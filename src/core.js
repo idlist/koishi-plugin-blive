@@ -1,6 +1,6 @@
 const { inspect } = require('util')
 const { Random, Logger, sleep, h } = require('koishi')
-const ApiGenerator = require('./api')
+const ApiSetup = require('./api')
 const Monitor = require('./monitor')
 const UserIconGetter = require('./get-user-icon')
 
@@ -31,7 +31,7 @@ const liverInfo = (username, uid, id) => {
  */
 module.exports = (ctx, config) => {
   const logger = new Logger('blive')
-  const api = new ApiGenerator(ctx)
+  const api = new ApiSetup(ctx, config)
   const iconGetter = new UserIconGetter(ctx)
 
   /** @type {Monitor} */

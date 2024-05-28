@@ -1,4 +1,4 @@
-const ApiGenerator = require('./api')
+const ApiSetup = require('./api')
 
 /**
  * @param {string} module
@@ -27,7 +27,7 @@ class UserIconGetter {
    */
   constructor(ctx) {
     this.ctx = ctx
-    this.api = new ApiGenerator(ctx)
+    this.api = new ApiSetup(ctx)
   }
 
   /**

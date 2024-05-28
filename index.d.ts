@@ -24,6 +24,7 @@ export interface SubscriptionItem {
 }
 
 export interface Config {
+  sessdata: string
   /**
    * 是否使用数据库。
    *

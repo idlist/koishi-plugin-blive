@@ -19,16 +19,25 @@ const mockHeader = {
 
 const logger = new Logger('blive')
 
-class ApiGenerator {
+class ApiSetup {
   /**
    * @param {import('koishi').Context} ctx
+   * @param {import('../index').Config} config
    */
-  constructor(ctx) {
+  constructor(ctx, config = {}) {
     /** @type {import('koishi').Quester} */
     this.http = ctx.http
+    this.sessdata = config?.sessdata
 
     this.wbiKey = ''
     this.wbiKeyFailed = true
+  }
+
+  async tryRefreshWbiKey() {
+    if (!this.wbiKey || this.wbiKeyFailed) {
+      const data = await this.http.get('https://api.bilibili.com/x/web-interface/nav')
+      this.wbiKey = extractWbiKey(data)
+    }
   }
 
   /**
@@ -39,6 +48,7 @@ class ApiGenerator {
     try {
       const data = await this.http.get('https://api.live.bilibili.com/room/v1/Room/room_init', {
         params: { id },
+        referer: 'https://live.bilibili.com',
         header: { ...mockHeader },
       })
       if (data.code) return { error: data.code }
@@ -90,11 +100,7 @@ class ApiGenerator {
    */
   async getUser(uid) {
     try {
-      if (!this.wbiKey || this.wbiKeyFailed) {
-        const data = await this.http.get('https://api.bilibili.com/x/web-interface/nav')
-
-        this.wbiKey = extractWbiKey(data)
-      }
+      await this.tryRefreshWbiKey()
 
       const params = { mid: uid }
       const encoded = encodeWbi(params, this.wbiKey)
@@ -102,8 +108,8 @@ class ApiGenerator {
       const data = await this.http.get(`https://api.bilibili.com/x/space/wbi/acc/info?${encoded}`, {
         headers: {
           ...mockHeader,
-          // https://github.com/SocialSisterYi/bilibili-API-collect/blob/master/docs/user/info
-          cookie: 'buvid3=wut',
+          referer: 'https://space.bilibili.com',
+          cookie: `SESSDATA=${this.sessdata};buvid3=114514`,
         },
       })
 
@@ -142,14 +148,12 @@ class ApiGenerator {
    */
   async searchUser(keyword, limit) {
     try {
-      const cookiesProbe = await this.http.axios('https://bilibili.com', {
+      const cookiesProbe = await this.http('https://bilibili.com', {
         method: 'get',
         header: { ...mockHeader },
         withCredentials: true,
       })
-
-      const cookies = cookiesProbe.headers['set-cookie']
-      const setCookies = cookies.map((c) => c.split(';')[0]).join('; ')
+      const setCookie = cookiesProbe.headers.get('set-cookie')
 
       const data = await this.http.get('https://api.bilibili.com/x/web-interface/search/type', {
         params: {
@@ -158,7 +162,7 @@ class ApiGenerator {
         },
         headers: {
           ...mockHeader,
-          cookie: setCookies,
+          cookie: setCookie,
         },
       })
 
@@ -208,4 +212,4 @@ class ApiGenerator {
   }
 }
 
-module.exports = ApiGenerator
+module.exports = ApiSetup
