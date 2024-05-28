@@ -48,7 +48,8 @@ class ApiSetup {
     try {
       const data = await this.http.get('https://api.live.bilibili.com/room/v1/Room/room_init', {
         params: { id },
-        referer: 'https://live.bilibili.com',
+        cookie: `SESSDATA=${this.sessdata}`,
+        referer: 'https://space.bilibili.com',
         header: { ...mockHeader },
       })
       if (data.code) return { error: data.code }
